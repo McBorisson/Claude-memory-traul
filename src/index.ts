@@ -1,0 +1,90 @@
+#!/usr/bin/env bun
+import { Command } from "commander";
+import { TraulDB } from "./db/database";
+import { loadConfig, ensureDbDir } from "./lib/config";
+import { setVerbose } from "./lib/logger";
+import { runSync } from "./commands/sync";
+import { runSearch } from "./commands/search";
+import {
+  runSignalsList,
+  runSignalsEvaluate,
+  runSignalsDismiss,
+} from "./commands/signals";
+import { runBriefing } from "./commands/briefing";
+
+const config = loadConfig();
+ensureDbDir(config.database.path);
+const db = new TraulDB(config.database.path);
+
+const program = new Command();
+
+program
+  .name("traul")
+  .description("Traul — Personal Intelligence Engine")
+  .version("0.1.0")
+  .option("-v, --verbose", "enable verbose output")
+  .hook("preAction", () => {
+    if (program.opts().verbose) {
+      setVerbose(true);
+    }
+  });
+
+program
+  .command("sync")
+  .description("Sync messages from communication sources")
+  .argument("[source]", "source to sync (e.g. slack)")
+  .action(async (source?: string) => {
+    await runSync(db, config, source);
+    db.close();
+  });
+
+program
+  .command("search")
+  .description("Search messages using full-text search")
+  .argument("<query>", "search query")
+  .option("-s, --source <source>", "filter by source")
+  .option("-c, --channel <channel>", "filter by channel name")
+  .option("-a, --after <date>", "messages after date (ISO 8601)")
+  .option("-b, --before <date>", "messages before date (ISO 8601)")
+  .option("-l, --limit <n>", "max results", "20")
+  .option("--json", "output as JSON")
+  .action((query: string, options) => {
+    runSearch(db, query, options);
+    db.close();
+  });
+
+const signalsCmd = program
+  .command("signals")
+  .description("View and manage signal results")
+  .option("--json", "output as JSON")
+  .action((options) => {
+    runSignalsList(db, options);
+    db.close();
+  });
+
+signalsCmd
+  .command("run")
+  .description("Evaluate all enabled signal definitions")
+  .action(() => {
+    runSignalsEvaluate(db, config);
+    db.close();
+  });
+
+signalsCmd
+  .command("dismiss")
+  .description("Dismiss a signal result")
+  .argument("<id>", "signal result ID")
+  .action((id: string) => {
+    runSignalsDismiss(db, id);
+    db.close();
+  });
+
+program
+  .command("briefing")
+  .description("Show a structured briefing with signals, stats, and volume")
+  .action(() => {
+    runBriefing(db);
+    db.close();
+  });
+
+program.parse();

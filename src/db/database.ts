@@ -1,0 +1,217 @@
+import { Database } from "bun:sqlite";
+import { initializeDatabase } from "./schema";
+import * as Q from "./queries";
+
+export interface MessageRow {
+  id: number;
+  source: string;
+  source_id: string;
+  channel_name: string | null;
+  thread_id: string | null;
+  author_name: string | null;
+  content: string;
+  sent_at: number;
+  metadata: string | null;
+  rank?: number;
+}
+
+export interface SignalResultRow {
+  id: number;
+  severity: string;
+  title: string;
+  detail: string | null;
+  created_at: number;
+  signal_name: string;
+  channel_name: string | null;
+  author_name: string | null;
+  content: string | null;
+  sent_at: number | null;
+}
+
+export interface Stats {
+  total_messages: number;
+  total_channels: number;
+  total_contacts: number;
+  active_signals: number;
+}
+
+export class TraulDB {
+  db: Database;
+
+  constructor(path: string) {
+    this.db = initializeDatabase(path);
+  }
+
+  upsertMessage(msg: {
+    source: string;
+    source_id: string;
+    channel_id?: string;
+    channel_name?: string;
+    thread_id?: string;
+    author_id?: string;
+    author_name?: string;
+    content: string;
+    sent_at: number;
+    metadata?: string;
+  }): void {
+    this.db.run(Q.UPSERT_MESSAGE, [
+      msg.source,
+      msg.source_id,
+      msg.channel_id ?? null,
+      msg.channel_name ?? null,
+      msg.thread_id ?? null,
+      msg.author_id ?? null,
+      msg.author_name ?? null,
+      msg.content,
+      msg.sent_at,
+      msg.metadata ?? null,
+    ]);
+  }
+
+  upsertContact(displayName: string): number {
+    const row = this.db
+      .query<{ id: number }, [string]>(Q.UPSERT_CONTACT)
+      .get(displayName);
+    return row!.id;
+  }
+
+  upsertContactIdentity(identity: {
+    contactId: number;
+    source: string;
+    sourceUserId: string;
+    username?: string;
+    displayName?: string;
+  }): void {
+    this.db.run(Q.UPSERT_CONTACT_IDENTITY, [
+      identity.contactId,
+      identity.source,
+      identity.sourceUserId,
+      identity.username ?? null,
+      identity.displayName ?? null,
+    ]);
+  }
+
+  getContactBySourceId(
+    source: string,
+    sourceUserId: string
+  ): { id: number; display_name: string } | null {
+    return this.db
+      .query<{ id: number; display_name: string }, [string, string]>(
+        Q.GET_CONTACT_BY_SOURCE_ID
+      )
+      .get(source, sourceUserId);
+  }
+
+  getSyncCursor(source: string, key: string): string | null {
+    const row = this.db
+      .query<{ cursor_value: string }, [string, string]>(Q.GET_SYNC_CURSOR)
+      .get(source, key);
+    return row?.cursor_value ?? null;
+  }
+
+  setSyncCursor(source: string, key: string, value: string): void {
+    this.db.run(Q.SET_SYNC_CURSOR, [source, key, value]);
+  }
+
+  searchMessages(
+    query: string,
+    options?: {
+      source?: string;
+      channel?: string;
+      after?: number;
+      before?: number;
+      limit?: number;
+    }
+  ): MessageRow[] {
+    const limit = options?.limit ?? 20;
+    const conditions: string[] = [];
+    const params: (string | number)[] = [query];
+
+    if (options?.source) {
+      conditions.push("m.source = ?");
+      params.push(options.source);
+    }
+    if (options?.channel) {
+      conditions.push("m.channel_name = ?");
+      params.push(options.channel);
+    }
+    if (options?.after) {
+      conditions.push("m.sent_at > ?");
+      params.push(options.after);
+    }
+    if (options?.before) {
+      conditions.push("m.sent_at < ?");
+      params.push(options.before);
+    }
+
+    let sql = Q.SEARCH_MESSAGES_FILTERED;
+    if (conditions.length > 0) {
+      sql += " AND " + conditions.join(" AND ");
+    }
+    sql += " ORDER BY rank LIMIT ?";
+    params.push(limit);
+
+    return this.db.query<MessageRow, (string | number)[]>(sql).all(...params);
+  }
+
+  getSignalDefinitions(): Array<{
+    id: number;
+    name: string;
+    description: string | null;
+    query: string;
+    severity_expression: string;
+    enabled: number;
+  }> {
+    return this.db
+      .query<
+        {
+          id: number;
+          name: string;
+          description: string | null;
+          query: string;
+          severity_expression: string;
+          enabled: number;
+        },
+        []
+      >(Q.GET_SIGNAL_DEFINITIONS)
+      .all();
+  }
+
+  insertSignalResult(result: {
+    definitionId: number;
+    messageId: number | null;
+    severity: string;
+    title: string;
+    detail?: string;
+  }): void {
+    this.db.run(Q.INSERT_SIGNAL_RESULT, [
+      result.definitionId,
+      result.messageId,
+      result.severity,
+      result.title,
+      result.detail ?? null,
+    ]);
+  }
+
+  getSignalResults(): SignalResultRow[] {
+    return this.db.query<SignalResultRow, []>(Q.GET_SIGNAL_RESULTS).all();
+  }
+
+  dismissSignal(id: number): void {
+    this.db.run(Q.DISMISS_SIGNAL, [id]);
+  }
+
+  getStats(): Stats {
+    return this.db.query<Stats, []>(Q.GET_STATS).get()!;
+  }
+
+  getMessageVolume(days: number = 7): Array<{ day: string; count: number }> {
+    return this.db
+      .query<{ day: string; count: number }, [number]>(Q.GET_MESSAGE_VOLUME)
+      .all(days);
+  }
+
+  close(): void {
+    this.db.close();
+  }
+}
