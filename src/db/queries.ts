@@ -108,3 +108,20 @@ export const GET_MESSAGE_VOLUME = `
   GROUP BY day
   ORDER BY day DESC
 `;
+
+export const GET_MESSAGES = `
+  SELECT m.id, m.source, m.source_id, m.channel_name, m.thread_id,
+         m.author_name, m.content, m.sent_at, m.metadata
+  FROM messages m
+  WHERE 1=1
+`;
+
+export const GET_CHANNELS = `
+  SELECT source, channel_name,
+         COUNT(*) AS msg_count,
+         MAX(sent_at) AS last_message
+  FROM messages
+  WHERE 1=1
+  GROUP BY source, channel_name
+  ORDER BY last_message DESC
+`;

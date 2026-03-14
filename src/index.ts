@@ -11,6 +11,8 @@ import {
   runSignalsDismiss,
 } from "./commands/signals";
 import { runBriefing } from "./commands/briefing";
+import { runMessages } from "./commands/messages";
+import { runChannels } from "./commands/channels";
 
 const config = loadConfig();
 ensureDbDir(config.database.path);
@@ -76,6 +78,34 @@ signalsCmd
   .argument("<id>", "signal result ID")
   .action((id: string) => {
     runSignalsDismiss(db, id);
+    db.close();
+  });
+
+program
+  .command("messages")
+  .description("Browse messages chronologically")
+  .argument("[channel]", "channel name (exact match)")
+  .option("-c, --channel <name>", "channel name (substring match)")
+  .option("-a, --author <name>", "filter by author name")
+  .option("-s, --source <source>", "filter by source (telegram, slack)")
+  .option("--after <date>", "messages after ISO date")
+  .option("--before <date>", "messages before ISO date")
+  .option("-l, --limit <n>", "max results (default: 50)")
+  .option("--json", "output as JSON")
+  .option("--asc", "oldest first")
+  .action((channel: string | undefined, options) => {
+    runMessages(db, channel, options);
+    db.close();
+  });
+
+program
+  .command("channels")
+  .description("List known channels with message counts")
+  .option("-s, --source <source>", "filter by source")
+  .option("--search <term>", "substring search in channel name")
+  .option("--json", "output as JSON")
+  .action((options) => {
+    runChannels(db, options);
     db.close();
   });
 

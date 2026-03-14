@@ -205,6 +205,81 @@ export class TraulDB {
     return this.db.query<Stats, []>(Q.GET_STATS).get()!;
   }
 
+  getMessages(options?: {
+    channel?: string;
+    channelLike?: string;
+    author?: string;
+    source?: string;
+    after?: number;
+    before?: number;
+    limit?: number;
+    asc?: boolean;
+  }): MessageRow[] {
+    const limit = options?.limit ?? 50;
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (options?.channel) {
+      conditions.push("m.channel_name = ?");
+      params.push(options.channel);
+    }
+    if (options?.channelLike) {
+      conditions.push("m.channel_name LIKE ?");
+      params.push(`%${options.channelLike}%`);
+    }
+    if (options?.author) {
+      conditions.push("m.author_name LIKE ?");
+      params.push(`%${options.author}%`);
+    }
+    if (options?.source) {
+      conditions.push("m.source = ?");
+      params.push(options.source);
+    }
+    if (options?.after) {
+      conditions.push("m.sent_at >= ?");
+      params.push(options.after);
+    }
+    if (options?.before) {
+      conditions.push("m.sent_at <= ?");
+      params.push(options.before);
+    }
+
+    let sql = Q.GET_MESSAGES;
+    if (conditions.length > 0) {
+      sql += " AND " + conditions.join(" AND ");
+    }
+    sql += ` ORDER BY m.sent_at ${options?.asc ? "ASC" : "DESC"} LIMIT ?`;
+    params.push(limit);
+
+    return this.db.query<MessageRow, (string | number)[]>(sql).all(...params);
+  }
+
+  getChannels(options?: {
+    source?: string;
+    search?: string;
+  }): Array<{ source: string; channel_name: string; msg_count: number; last_message: number }> {
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (options?.source) {
+      conditions.push("source = ?");
+      params.push(options.source);
+    }
+    if (options?.search) {
+      conditions.push("channel_name LIKE ?");
+      params.push(`%${options.search}%`);
+    }
+
+    let sql = Q.GET_CHANNELS;
+    if (conditions.length > 0) {
+      sql = sql.replace("WHERE 1=1", "WHERE 1=1 AND " + conditions.join(" AND "));
+    }
+
+    return this.db
+      .query<{ source: string; channel_name: string; msg_count: number; last_message: number }, (string | number)[]>(sql)
+      .all(...params);
+  }
+
   getMessageVolume(days: number = 7): Array<{ day: string; count: number }> {
     return this.db
       .query<{ day: string; count: number }, [number]>(Q.GET_MESSAGE_VOLUME)
