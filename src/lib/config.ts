@@ -19,6 +19,11 @@ export interface TraulConfig {
     session_path: string;
     chats: string[];
   };
+  linear: {
+    api_key: string;
+    teams: string[];
+    workspaces: Array<{ name: string; api_key: string; teams: string[] }>;
+  };
 }
 
 const CONFIG_DIR = join(homedir(), ".config", "traul");
@@ -31,6 +36,7 @@ function getDefaultConfig(): TraulConfig {
     database: { path: DEFAULT_DB_PATH },
     slack: { token: "", cookie: "", my_user_id: "", channels: [] },
     telegram: { api_id: "", api_hash: "", session_path: "", chats: [] },
+    linear: { api_key: "", teams: [], workspaces: [] },
   };
 }
 
@@ -57,6 +63,12 @@ export function loadConfig(): TraulConfig {
         parsed.telegram?.session_path ?? defaults.telegram.session_path;
       defaults.telegram.chats =
         parsed.telegram?.chats ?? defaults.telegram.chats;
+      defaults.linear.api_key =
+        parsed.linear?.api_key ?? defaults.linear.api_key;
+      defaults.linear.teams =
+        parsed.linear?.teams ?? defaults.linear.teams;
+      defaults.linear.workspaces =
+        parsed.linear?.workspaces ?? defaults.linear.workspaces;
     } catch {
       // ignore malformed config, use defaults
     }
@@ -90,6 +102,21 @@ export function loadConfig(): TraulConfig {
   }
   if (process.env.TELEGRAM_API_HASH) {
     defaults.telegram.api_hash = process.env.TELEGRAM_API_HASH;
+  }
+  defaults.linear.api_key = process.env.LINEAR_API_KEY ?? defaults.linear.api_key;
+  // Collect all LINEAR_API_KEY_<WORKSPACE> env vars into workspaces
+  const envWorkspaceNames = new Set(defaults.linear.workspaces.map((w) => w.name));
+  for (const [key, val] of Object.entries(process.env)) {
+    if (key.startsWith("LINEAR_API_KEY_") && val) {
+      const name = key.replace("LINEAR_API_KEY_", "").toLowerCase();
+      if (!defaults.linear.api_key) {
+        defaults.linear.api_key = val;
+      }
+      if (!envWorkspaceNames.has(name)) {
+        defaults.linear.workspaces.push({ name, api_key: val, teams: [] });
+        envWorkspaceNames.add(name);
+      }
+    }
   }
 
   return defaults;
