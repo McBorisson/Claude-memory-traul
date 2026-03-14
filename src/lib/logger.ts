@@ -11,7 +11,7 @@ export function debug(...args: unknown[]): void {
 }
 
 export function info(...args: unknown[]): void {
-  console.error("[INFO]", ...args);
+  console.log("[INFO]", ...args);
 }
 
 export function warn(...args: unknown[]): void {

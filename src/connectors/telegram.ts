@@ -105,14 +105,30 @@ export const telegramConnector: Connector = {
       }));
     }
 
-    log.info(`Syncing ${chatsToSync.length} Telegram chats...`);
+    const totalChats = chatsToSync.length;
+    log.info(`Syncing ${totalChats} Telegram chats...`);
 
     const contactCache = new Map<string, boolean>();
+    const syncStart = Date.now();
 
-    for (const chat of chatsToSync) {
-      log.info(`  ${chat.name}`);
+    for (let i = 0; i < chatsToSync.length; i++) {
+      const chat = chatsToSync[i];
+      const now = Date.now();
+      const elapsed = Math.round((now - syncStart) / 1000);
+      log.info(`  [${i + 1}/${totalChats}] ${chat.name} (${elapsed}s elapsed)`);
       const cursorKey = `chat:${chat.id}`;
       const cursorValue = db.getSyncCursor("telegram", cursorKey);
+
+      // Skip chat if it was synced less than 1 hour ago
+      const lastSyncKey = `synced_at:${chat.id}`;
+      const lastSyncValue = db.getSyncCursor("telegram", lastSyncKey);
+      if (lastSyncValue) {
+        const ageMs = Date.now() - parseInt(lastSyncValue);
+        if (ageMs < 3600_000 && ageMs > 0) {
+          log.info(`    skipped (synced ${Math.round(ageMs / 60_000)}m ago)`);
+          continue;
+        }
+      }
 
       // Calculate days to fetch: from cursor or sync_start, default 7
       let days: number | undefined;
@@ -128,11 +144,17 @@ export const telegramConnector: Connector = {
       }
 
       let messages: TgMessage[];
+      const progressTimer = setInterval(() => {
+        const sec = Math.round((Date.now() - syncStart) / 1000);
+        log.info(`    ... still fetching ${chat.name} (${sec}s elapsed)`);
+      }, 10_000);
       try {
         messages = await fetchMessages(chat.name, { limit: 500, days });
       } catch (err) {
         log.warn(`  Failed to fetch ${chat.name}: ${err}`);
         continue;
+      } finally {
+        clearInterval(progressTimer);
       }
 
       let chatMsgCount = 0;
@@ -186,6 +208,7 @@ export const telegramConnector: Connector = {
       if (latestDate && latestDate !== (cursorValue ?? "")) {
         db.setSyncCursor("telegram", cursorKey, latestDate);
       }
+      db.setSyncCursor("telegram", lastSyncKey, String(Date.now()));
 
       result.messagesAdded += chatMsgCount;
       log.info(`    ${chatMsgCount} messages`);
