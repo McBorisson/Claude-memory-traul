@@ -12,7 +12,7 @@ export async function runSearch(
     before?: string;
     limit?: string;
     json?: boolean;
-    semantic?: boolean;
+    fts?: boolean;
   }
 ): Promise<void> {
   const limit = options.limit ? parseInt(options.limit, 10) : 20;
@@ -32,11 +32,16 @@ export async function runSearch(
   };
 
   let results;
-  if (options.semantic) {
-    const vec = await embed(query);
-    results = db.hybridSearch(query, vecToBytes(vec), searchOpts);
-  } else {
+  if (options.fts) {
     results = db.searchMessages(query, searchOpts);
+  } else {
+    // Hybrid by default, fall back to FTS if Ollama is unavailable
+    try {
+      const vec = await embed(query);
+      results = db.hybridSearch(query, vecToBytes(vec), searchOpts);
+    } catch {
+      results = db.searchMessages(query, searchOpts);
+    }
   }
 
   if (results.length === 0) {

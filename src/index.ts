@@ -51,7 +51,7 @@ program
   .option("-b, --before <date>", "messages before date (ISO 8601)")
   .option("-l, --limit <n>", "max results", "20")
   .option("--json", "output as JSON")
-  .option("--semantic", "use hybrid FTS + vector search (requires embeddings)")
+  .option("--fts", "keyword-only search (skip vector search)")
   .action(async (query: string, options) => {
     await runSearch(db, query, options);
     db.close();
