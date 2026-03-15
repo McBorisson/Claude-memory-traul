@@ -26,13 +26,23 @@ async function embedItems(
     console.log(`Embedding ${items.length} ${label}...`);
   }
 
+  const skippedIds: number[] = [];
+
   for (let i = 0; i < items.length; i += BATCH_SIZE) {
     const batch = items.slice(i, i + BATCH_SIZE);
     try {
-      const vecs = await embedBatch(batch.map((item) => item.content));
+      const vecs = await embedBatch(
+        batch.map((item) => item.content),
+        (idx) => {
+          failed++;
+          skippedIds.push(batch[idx]?.id);
+        }
+      );
       for (let j = 0; j < batch.length; j++) {
-        insertFn(batch[j].id, vecToBytes(vecs[j]));
-        done++;
+        if (vecs[j] !== null) {
+          insertFn(batch[j].id, vecToBytes(vecs[j]!));
+          done++;
+        }
       }
     } catch (err) {
       failed += batch.length;
@@ -57,6 +67,9 @@ async function embedItems(
 
   if (!quiet && items.length > 0) {
     process.stdout.write("\r" + " ".repeat(80) + "\r");
+    if (skippedIds.length > 0) {
+      process.stderr.write(`  ! skipped ${skippedIds.length} ${label} (ids: ${skippedIds.slice(0, 10).join(",")}${skippedIds.length > 10 ? "..." : ""})\n`);
+    }
   }
 
   return { done, failed, elapsed: Date.now() - startTime };

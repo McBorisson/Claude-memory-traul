@@ -87,8 +87,8 @@ export const INSERT_EMBEDDING = `
 export const GET_UNEMBEDDED_MESSAGES = `
   SELECT m.id, m.content
   FROM messages m
-  LEFT JOIN vec_messages v ON v.message_id = m.id
-  WHERE v.message_id IS NULL AND m.content != ''
+  WHERE m.content != ''
+    AND m.id NOT IN (SELECT message_id FROM vec_messages)
   ORDER BY m.id
   LIMIT ?
 `;
@@ -126,8 +126,8 @@ export const INSERT_CHUNK = `
 export const GET_UNEMBEDDED_CHUNKS = `
   SELECT c.id, c.embedding_input AS content
   FROM chunks c
-  LEFT JOIN vec_chunks v ON v.chunk_id = c.id
-  WHERE v.chunk_id IS NULL AND c.content != ''
+  WHERE c.content != ''
+    AND c.id NOT IN (SELECT chunk_id FROM vec_chunks)
   ORDER BY c.id
   LIMIT ?
 `;
