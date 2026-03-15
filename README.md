@@ -15,7 +15,7 @@ Supported connectors:
 
 - **Multi-source sync** — Slack (multi-workspace, xoxc/xoxb tokens), Telegram (via Telethon), Linear (multi-workspace GraphQL), Claude Code sessions, Markdown files
 - **Hybrid search** — FTS5 full-text search + vector similarity via Ollama embeddings
-- **Contact dedup** — unified identities across sources
+- **Contact dedup** (WIP) — basic identity tracking across sources, proper contact API planned
 - **Local-first** — all data stays in a local SQLite database
 
 ## Requirements
