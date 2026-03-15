@@ -59,7 +59,7 @@ Dual strategy — dynamic headers with a minimum floor delay:
 6. For each channel:
    - Read sync cursor (last synced message ID for that channel)
    - Fetch messages newer than cursor using `after={cursor_id}`, paginate forward
-   - For messages with threads, fetch thread messages with `thread_id` set to parent message ID
+   - Thread channels (discovered via guild channel listing and archived thread endpoints) are synced as regular channels with `thread_id` set to the thread channel ID
    - Save latest message ID as new sync cursor
 
 ### Initial vs Incremental Sync
@@ -110,7 +110,7 @@ Create/link contacts from `message.author` using the same pattern as Slack's `re
 Threads in Discord are channels with a `parent_id`. During sync:
 - Active threads are listed via guild channel listing (type 11 = public thread, type 12 = private thread)
 - Archived threads fetched via `/channels/{parent_id}/threads/archived/public` and `/threads/archived/private`
-- Thread messages stored with `thread_id` = thread's parent message ID (the message that started the thread)
+- Thread messages stored with `thread_id` = thread channel ID (Discord doesn't expose the starter message ID on thread channel objects; using the thread channel ID groups all messages in the same thread together)
 - Thread channel name follows parent: `ServerName/channel-name` (thread messages distinguished by `thread_id`)
 
 ## Implementation Approach
