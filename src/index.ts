@@ -96,8 +96,8 @@ program
   .command("stats")
   .description("Show database statistics")
   .option("--json", "output as JSON")
-  .action((options) => {
-    runStats(db, options);
+  .action(async (options) => {
+    await runStats(db, config, options);
     db.close();
   });
 

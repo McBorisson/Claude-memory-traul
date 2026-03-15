@@ -736,6 +736,25 @@ export class TraulDB {
     };
   }
 
+  getStatsBySource(): Array<{
+    source: string;
+    messages: number;
+    channels: number;
+    chunks: number;
+  }> {
+    return this.db
+      .query<{ source: string; messages: number; channels: number; chunks: number }, []>(
+        `SELECT m.source,
+                COUNT(DISTINCT m.id) AS messages,
+                COUNT(DISTINCT m.channel_name) AS channels,
+                (SELECT COUNT(*) FROM chunks c WHERE c.message_id IN (SELECT id FROM messages WHERE source = m.source)) AS chunks
+         FROM messages m
+         GROUP BY m.source
+         ORDER BY messages DESC`
+      )
+      .all();
+  }
+
   getMessagesBySource(source: string): Array<{ id: number; source_id: string; metadata: string | null }> {
     return this.db
       .query<{ id: number; source_id: string; metadata: string | null }, [string]>(
