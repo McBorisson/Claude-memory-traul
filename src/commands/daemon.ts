@@ -3,9 +3,10 @@ import { homedir } from "os";
 import type { TraulDB } from "../db/database";
 import type { TraulConfig } from "../lib/config";
 import { Scheduler } from "../daemon/scheduler";
-import { startHealthServer, stopHealthServer } from "../daemon/health";
+import { startHealthServer, stopHealthServer, getCredsPresent } from "../daemon/health";
 import { writePid, readPid, removePid, isProcessAlive } from "../daemon/pid";
-import { GRACEFUL_SHUTDOWN_MS } from "../daemon/types";
+import { GRACEFUL_SHUTDOWN_MS, SOURCE_PRIORITY } from "../daemon/types";
+import type { DaemonIntervals } from "../daemon/types";
 import { slackConnector } from "../connectors/slack";
 import { telegramConnector } from "../connectors/telegram";
 import { linearConnector } from "../connectors/linear";
@@ -73,6 +74,16 @@ export async function runDaemonStart(
   writePid(PID_PATH, process.pid);
   log.info(`Daemon starting (PID ${process.pid})...`);
 
+  // Check credentials and determine which sources to schedule
+  const credsPresent = getCredsPresent(config);
+  const enabled = SOURCE_PRIORITY.filter((s) => credsPresent[s]);
+  const missing = SOURCE_PRIORITY.filter((s) => !credsPresent[s]);
+
+  log.info(`Configured sources: ${enabled.join(", ")}`);
+  if (missing.length > 0) {
+    log.info(`Missing credentials: ${missing.join(", ")}`);
+  }
+
   const scheduler = new Scheduler(config.daemon, async (source, onProgress) => {
     if (source === "embed") {
       await runEmbed(db, { limit: "10000", quiet: true, onProgress });
@@ -85,7 +96,7 @@ export async function runDaemonStart(
       const result = await connector.sync(db, config);
       log.info(`${source}: ${result.messagesAdded} added, ${result.contactsAdded} contacts`);
     }
-  });
+  }, enabled as Array<keyof DaemonIntervals>);
 
   // Health endpoint
   await startHealthServer(config.daemon.port, () => scheduler.getStates(), config);

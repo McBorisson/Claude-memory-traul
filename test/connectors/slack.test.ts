@@ -14,7 +14,7 @@ describe("Slack connector", () => {
       slack: { token: "", my_user_id: "", channels: [] },
     };
 
-    const result = await slackConnector.sync(db, config);
+    const result = await slackConnector.sync(db, config as any);
     expect(result.messagesAdded).toBe(0);
     expect(result.messagesUpdated).toBe(0);
     expect(result.contactsAdded).toBe(0);

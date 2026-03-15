@@ -4,8 +4,8 @@ import * as log from "../lib/logger";
 
 type AuthStatus = "success" | "creds-empty" | "fail";
 
-function getAuthStatuses(config: TraulConfig, states: Map<string, SourceState>): Record<string, AuthStatus> {
-  const credsPresent: Record<string, boolean> = {
+export function getCredsPresent(config: TraulConfig): Record<string, boolean> {
+  return {
     slack: !!config.slack.token,
     telegram: !!config.telegram.api_id && !!config.telegram.api_hash,
     whatsapp: config.whatsapp.instances.length > 0,
@@ -16,6 +16,10 @@ function getAuthStatuses(config: TraulConfig, states: Map<string, SourceState>):
     markdown: true, // reads local files, no creds needed
     embed: true, // internal task, no creds needed
   };
+}
+
+function getAuthStatuses(config: TraulConfig, states: Map<string, SourceState>): Record<string, AuthStatus> {
+  const credsPresent = getCredsPresent(config);
 
   const result: Record<string, AuthStatus> = {};
   for (const [name, hasCreds] of Object.entries(credsPresent)) {

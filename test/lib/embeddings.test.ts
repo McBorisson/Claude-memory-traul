@@ -5,7 +5,7 @@ import { embedBatch, BATCH_SIZE } from "../../src/lib/embeddings";
 const originalFetch = globalThis.fetch;
 
 function mockFetch(handler: (url: string, opts: RequestInit) => Response | Promise<Response>) {
-  globalThis.fetch = mock(handler as typeof fetch) as typeof fetch;
+  globalThis.fetch = mock(handler as typeof fetch) as unknown as typeof fetch;
 }
 
 function restoreFetch() {

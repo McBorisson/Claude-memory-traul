@@ -15,11 +15,15 @@ interface SourceEntry {
 export class Scheduler {
   private sources = new Map<string, SourceEntry>();
   private stopped = false;
+  private enabledSources: Array<keyof DaemonIntervals>;
 
   constructor(
     private config: DaemonConfig,
     private runFn: RunFn,
-  ) {}
+    enabledSources?: Array<keyof DaemonIntervals>,
+  ) {
+    this.enabledSources = enabledSources ?? [...SOURCE_PRIORITY];
+  }
 
   getStates(): Map<string, SourceState> {
     const result = new Map<string, SourceState>();
@@ -32,8 +36,8 @@ export class Scheduler {
   start(): void {
     this.stopped = false;
 
-    for (let i = 0; i < SOURCE_PRIORITY.length; i++) {
-      const source = SOURCE_PRIORITY[i];
+    for (let i = 0; i < this.enabledSources.length; i++) {
+      const source = this.enabledSources[i];
       const entry: SourceEntry = {
         timer: null,
         running: false,

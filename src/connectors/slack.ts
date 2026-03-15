@@ -1,4 +1,4 @@
-import { WebClient } from "@slack/web-api";
+import { WebClient, LogLevel } from "@slack/web-api";
 import type { Connector, SyncResult } from "./types";
 import type { TraulDB } from "../db/database";
 import { type TraulConfig, getSyncStartTimestamp } from "../lib/config";
@@ -22,7 +22,7 @@ export const slackConnector: Connector = {
     const client = new WebClient(config.slack.token, {
       headers,
       retryConfig: { retries: 5, factor: 2 },
-      logLevel: 0, // suppress built-in rate limit warnings
+      logLevel: LogLevel.ERROR, // suppress built-in rate limit warnings
     });
     const result: SyncResult = {
       messagesAdded: 0,
@@ -173,7 +173,7 @@ export const slackConnector: Connector = {
                   author_id: reply.user,
                   author_name: replyUser?.displayName,
                   content: reply.text,
-                  sent_at: Math.floor(parseFloat(reply.ts)),
+                  sent_at: Math.floor(parseFloat(reply.ts!)),
                 });
                 channelMsgCount++;
 
