@@ -284,8 +284,7 @@ export class TraulDB {
     return this.db.query<MessageRow, (Uint8Array | string | number)[]>(sql).all(...params);
   }
 
-  hybridSearch(
-    query: string,
+  vectorSearchAll(
     embedding: Uint8Array,
     options?: {
       source?: string;
@@ -296,23 +295,40 @@ export class TraulDB {
     }
   ): MessageRow[] {
     const limit = options?.limit ?? 20;
-    const k = limit * 3; // oversample for RRF merging
+    const k = limit * 3;
 
-    const ftsResults = this.searchMessages(query, { ...options, limit: k });
-    const vecResults = this.vectorSearch(embedding, { ...options, limit: k });
+    const vecMessages = this.vectorSearch(embedding, { ...options, limit: k });
+    const vecChunks = this.vectorSearchChunks(embedding, { ...options, limit: k });
 
-    // Also search chunks
-    const ftsChunkResults = this.searchChunks(query, { ...options, limit: k });
-    const vecChunkResults = this.vectorSearchChunks(embedding, { ...options, limit: k });
+    return this.rrfMerge([vecMessages, vecChunks], limit);
+  }
 
-    // Reciprocal Rank Fusion — use content hash as key to deduplicate chunks from same message
+  ftsSearchAll(
+    query: string,
+    options?: {
+      source?: string;
+      channel?: string;
+      after?: number;
+      before?: number;
+      limit?: number;
+    }
+  ): MessageRow[] {
+    const limit = options?.limit ?? 20;
+    const k = limit * 3;
+
+    const ftsMessages = this.searchMessages(query, { ...options, limit: k });
+    const ftsChunks = this.searchChunks(query, { ...options, limit: k });
+
+    return this.rrfMerge([ftsMessages, ftsChunks], limit);
+  }
+
+  private rrfMerge(resultSets: MessageRow[][], limit: number): MessageRow[] {
     const RRF_K = 60;
     const scores = new Map<string, { score: number; msg: MessageRow }>();
 
-    const addResults = (results: MessageRow[]) => {
+    for (const results of resultSets) {
       results.forEach((msg, i) => {
         const rrf = 1.0 / (RRF_K + i + 1);
-        // Use id + content prefix as key to keep distinct chunks separate
         const key = `${msg.id}:${msg.content.slice(0, 50)}`;
         const existing = scores.get(key);
         if (existing) {
@@ -321,12 +337,7 @@ export class TraulDB {
           scores.set(key, { score: rrf, msg });
         }
       });
-    };
-
-    addResults(ftsResults);
-    addResults(vecResults);
-    addResults(ftsChunkResults);
-    addResults(vecChunkResults);
+    }
 
     return [...scores.values()]
       .sort((a, b) => b.score - a.score)
