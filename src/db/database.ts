@@ -485,16 +485,11 @@ export class TraulDB {
     embedded_messages: number;
     total_chunks: number;
     embedded_chunks: number;
-    channels: Array<{ source: string; channel_name: string; msg_count: number }>;
   } {
-    const channels = this.db
-      .query<{ source: string; channel_name: string; msg_count: number }, []>(Q.GET_DETAILED_STATS)
-      .all();
     const stats = this.getStats();
     const embStats = this.getEmbeddingStats();
     const chunkStats = this.getChunkEmbeddingStats();
 
-    // Get DB file size
     const sizeRow = this.db
       .query<{ page_count: number; page_size: number }, []>(
         "SELECT (SELECT page_count FROM pragma_page_count) AS page_count, (SELECT page_size FROM pragma_page_size) AS page_size"
@@ -508,7 +503,6 @@ export class TraulDB {
       embedded_messages: embStats.embedded_messages,
       total_chunks: chunkStats.total_chunks,
       embedded_chunks: chunkStats.embedded_chunks,
-      channels,
     };
   }
 

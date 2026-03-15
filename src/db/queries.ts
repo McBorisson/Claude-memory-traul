@@ -172,14 +172,6 @@ export const GET_MESSAGE_CHUNK_IDS = `
   SELECT id FROM chunks WHERE message_id = ?
 `;
 
-export const GET_DETAILED_STATS = `
-  SELECT source, channel_name,
-         COUNT(*) AS msg_count
-  FROM messages
-  GROUP BY source, channel_name
-  ORDER BY source, msg_count DESC
-`;
-
 export const GET_CHANNELS = `
   SELECT source, channel_name,
          COUNT(*) AS msg_count,
