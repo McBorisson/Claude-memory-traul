@@ -506,6 +506,31 @@ export class TraulDB {
     };
   }
 
+  getMessagesBySource(source: string): Array<{ id: number; source_id: string; metadata: string | null }> {
+    return this.db
+      .query<{ id: number; source_id: string; metadata: string | null }, [string]>(
+        "SELECT id, source_id, metadata FROM messages WHERE source = ?"
+      )
+      .all(source);
+  }
+
+  deleteMessage(id: number): void {
+    // Delete chunks and their embeddings first
+    const chunkIds = this.db
+      .query<{ id: number }, [number]>("SELECT id FROM chunks WHERE message_id = ?")
+      .all(id);
+    for (const { id: chunkId } of chunkIds) {
+      this.db.run("DELETE FROM vec_chunks WHERE chunk_id = ?", [chunkId]);
+    }
+    this.db.run("DELETE FROM chunks WHERE message_id = ?", [id]);
+    this.db.run("DELETE FROM vec_messages WHERE message_id = ?", [id]);
+    this.db.run("DELETE FROM messages WHERE id = ?", [id]);
+  }
+
+  deleteSyncCursor(source: string, key: string): void {
+    this.db.run("DELETE FROM sync_cursors WHERE source = ? AND key = ?", [source, key]);
+  }
+
   close(): void {
     this.db.close();
   }

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "fs";
+import { readdirSync, readFileSync, statSync, existsSync } from "fs";
 import { join, relative, basename, extname } from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
@@ -123,6 +123,33 @@ export const markdownConnector: Connector = {
       }
 
       log.info(`  ${synced} files synced from ${dir} (${files.length} total .md files)`);
+    }
+
+    // Prune messages whose source files no longer exist
+    const expandedDirs = dirs.map((d) => d.replace(/^~/, homedir()));
+    const allMessages = db.getMessagesBySource("markdown");
+    let pruned = 0;
+
+    for (const msg of allMessages) {
+      if (!msg.metadata) continue;
+      let relPath: string;
+      try {
+        relPath = JSON.parse(msg.metadata).path;
+      } catch {
+        continue;
+      }
+      if (!relPath) continue;
+
+      const fileExists = expandedDirs.some((dir) => existsSync(join(dir, relPath)));
+      if (!fileExists) {
+        db.deleteMessage(msg.id);
+        db.deleteSyncCursor("markdown", `file:${relPath}`);
+        pruned++;
+      }
+    }
+
+    if (pruned > 0) {
+      log.info(`  Pruned ${pruned} messages for deleted files`);
     }
 
     return result;
