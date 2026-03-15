@@ -2,7 +2,14 @@
 
 Personal Intelligence Engine — aggregates communication streams into a searchable local index.
 
-Traul syncs messages from Slack, Telegram, and Linear into a local SQLite database with full-text and vector search.
+Traul syncs messages from multiple sources into a local SQLite database with full-text and vector search.
+
+Supported connectors:
+- Slack
+- Telegram
+- Linear
+- Markdown files
+- Claude Code sessions
 
 ## Features
 
