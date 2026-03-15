@@ -9,6 +9,7 @@ import { runMessages } from "./commands/messages";
 import { runChannels } from "./commands/channels";
 import { runEmbed } from "./commands/embed";
 import { runStats } from "./commands/stats";
+import { runWhatsAppAuth } from "./commands/whatsapp-auth";
 
 const config = loadConfig();
 ensureDbDir(config.database.path);
@@ -113,6 +114,19 @@ program
     db.resetEmbeddings(EMBED_DIMS);
     console.log("Done. Run 'traul embed' to regenerate embeddings.");
     db.close();
+  });
+
+const whatsapp = program
+  .command("whatsapp")
+  .description("WhatsApp connector commands");
+
+whatsapp
+  .command("auth")
+  .description("Authenticate a WhatsApp account via WAHA QR code")
+  .argument("<account>", "account name matching config instance name")
+  .action(async (account: string) => {
+    await runWhatsAppAuth(config, account);
+    process.exit(0);
   });
 
 program.parse();

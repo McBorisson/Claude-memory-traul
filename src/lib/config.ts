@@ -30,6 +30,7 @@ export interface TraulConfig {
   gmail: {
     client_id: string;
     client_secret: string;
+    refresh_token: string;
     accounts: Array<{ name: string; labels: string[] }>;
   };
   whatsapp: {
@@ -55,7 +56,7 @@ function getDefaultConfig(): TraulConfig {
     telegram: { api_id: "", api_hash: "", session_path: "", chats: [] },
     linear: { api_key: "", teams: [], workspaces: [] },
     markdown: { dirs: [] },
-    gmail: { client_id: "", client_secret: "", accounts: [] },
+    gmail: { client_id: "", client_secret: "", refresh_token: "", accounts: [] },
     whatsapp: { instances: [] },
   };
 }
@@ -94,6 +95,7 @@ export function loadConfig(): TraulConfig {
       // Gmail
       defaults.gmail.client_id = parsed.gmail?.client_id ?? defaults.gmail.client_id;
       defaults.gmail.client_secret = parsed.gmail?.client_secret ?? defaults.gmail.client_secret;
+      defaults.gmail.refresh_token = parsed.gmail?.refresh_token ?? defaults.gmail.refresh_token;
       defaults.gmail.accounts = parsed.gmail?.accounts ?? defaults.gmail.accounts;
       // WhatsApp
       defaults.whatsapp.instances = parsed.whatsapp?.instances ?? defaults.whatsapp.instances;
@@ -132,8 +134,18 @@ export function loadConfig(): TraulConfig {
     defaults.telegram.api_hash = process.env.TELEGRAM_API_HASH;
   }
   defaults.linear.api_key = process.env.LINEAR_API_KEY ?? defaults.linear.api_key;
+  // Gmail: GMAIL_CREDS_JSON (combined) or individual env vars
+  if (process.env.GMAIL_CREDS_JSON) {
+    try {
+      const creds = JSON.parse(process.env.GMAIL_CREDS_JSON);
+      defaults.gmail.client_id = creds.client_id ?? defaults.gmail.client_id;
+      defaults.gmail.client_secret = creds.client_secret ?? defaults.gmail.client_secret;
+      defaults.gmail.refresh_token = creds.refresh_token ?? defaults.gmail.refresh_token;
+    } catch {}
+  }
   defaults.gmail.client_id = process.env.GMAIL_CLIENT_ID ?? defaults.gmail.client_id;
   defaults.gmail.client_secret = process.env.GMAIL_CLIENT_SECRET ?? defaults.gmail.client_secret;
+  defaults.gmail.refresh_token = process.env.GMAIL_REFRESH_TOKEN ?? defaults.gmail.refresh_token;
   // Collect all LINEAR_API_KEY_<WORKSPACE> env vars into workspaces
   const envWorkspaceNames = new Set(defaults.linear.workspaces.map((w) => w.name));
   for (const [key, val] of Object.entries(process.env)) {

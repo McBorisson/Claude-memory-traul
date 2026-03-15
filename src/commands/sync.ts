@@ -5,10 +5,12 @@ import { telegramConnector } from "../connectors/telegram";
 import { linearConnector } from "../connectors/linear";
 import { claudeCodeConnector } from "../connectors/claude-code";
 import { markdownConnector } from "../connectors/markdown";
+import { gmailConnector } from "../connectors/gmail";
+import { whatsappConnector } from "../connectors/whatsapp";
 import { runEmbed } from "./embed";
 import * as log from "../lib/logger";
 
-const connectors = [slackConnector, telegramConnector, linearConnector, claudeCodeConnector, markdownConnector];
+const connectors = [slackConnector, telegramConnector, linearConnector, claudeCodeConnector, markdownConnector, gmailConnector, whatsappConnector];
 
 export async function runSync(
   db: TraulDB,

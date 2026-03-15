@@ -1,0 +1,13 @@
+services:
+  waha:
+    image: devlikeapro/waha
+    ports:
+      - "3000:3000"
+    environment:
+      - WAHA_DEFAULT_ENGINE=WEBJS
+    volumes:
+      - waha_data:/app/.sessions
+    restart: unless-stopped
+
+volumes:
+  waha_data:
