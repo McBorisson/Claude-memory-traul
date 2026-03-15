@@ -90,7 +90,7 @@ export const GET_UNEMBEDDED_MESSAGES = `
   WHERE m.content != ''
     AND m.id NOT IN (SELECT message_id FROM vec_messages)
     AND m.id NOT IN (SELECT DISTINCT message_id FROM chunks)
-  ORDER BY m.id
+  ORDER BY m.id DESC
   LIMIT ?
 `;
 
@@ -129,7 +129,7 @@ export const GET_UNEMBEDDED_CHUNKS = `
   FROM chunks c
   WHERE c.content != ''
     AND c.id NOT IN (SELECT chunk_id FROM vec_chunks)
-  ORDER BY c.id
+  ORDER BY c.id DESC
   LIMIT ?
 `;
 
