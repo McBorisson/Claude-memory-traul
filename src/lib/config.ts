@@ -27,6 +27,20 @@ export interface TraulConfig {
   markdown: {
     dirs: string[];
   };
+  gmail: {
+    client_id: string;
+    client_secret: string;
+    accounts: Array<{ name: string; labels: string[] }>;
+  };
+  whatsapp: {
+    instances: Array<{
+      name: string;
+      url: string;
+      api_key: string;
+      session: string;
+      chats: string[];
+    }>;
+  };
 }
 
 const CONFIG_DIR = join(homedir(), ".config", "traul");
@@ -41,6 +55,8 @@ function getDefaultConfig(): TraulConfig {
     telegram: { api_id: "", api_hash: "", session_path: "", chats: [] },
     linear: { api_key: "", teams: [], workspaces: [] },
     markdown: { dirs: [] },
+    gmail: { client_id: "", client_secret: "", accounts: [] },
+    whatsapp: { instances: [] },
   };
 }
 
@@ -75,6 +91,12 @@ export function loadConfig(): TraulConfig {
         parsed.linear?.workspaces ?? defaults.linear.workspaces;
       defaults.markdown.dirs =
         parsed.markdown?.dirs ?? defaults.markdown.dirs;
+      // Gmail
+      defaults.gmail.client_id = parsed.gmail?.client_id ?? defaults.gmail.client_id;
+      defaults.gmail.client_secret = parsed.gmail?.client_secret ?? defaults.gmail.client_secret;
+      defaults.gmail.accounts = parsed.gmail?.accounts ?? defaults.gmail.accounts;
+      // WhatsApp
+      defaults.whatsapp.instances = parsed.whatsapp?.instances ?? defaults.whatsapp.instances;
     } catch {
       // ignore malformed config, use defaults
     }
@@ -110,6 +132,8 @@ export function loadConfig(): TraulConfig {
     defaults.telegram.api_hash = process.env.TELEGRAM_API_HASH;
   }
   defaults.linear.api_key = process.env.LINEAR_API_KEY ?? defaults.linear.api_key;
+  defaults.gmail.client_id = process.env.GMAIL_CLIENT_ID ?? defaults.gmail.client_id;
+  defaults.gmail.client_secret = process.env.GMAIL_CLIENT_SECRET ?? defaults.gmail.client_secret;
   // Collect all LINEAR_API_KEY_<WORKSPACE> env vars into workspaces
   const envWorkspaceNames = new Set(defaults.linear.workspaces.map((w) => w.name));
   for (const [key, val] of Object.entries(process.env)) {
