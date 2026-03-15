@@ -2,7 +2,7 @@ import { join } from "path";
 import { homedir } from "os";
 import type { TraulDB } from "../db/database";
 import type { TraulConfig } from "../lib/config";
-import { Scheduler, type ProgressCallback } from "../daemon/scheduler";
+import { Scheduler } from "../daemon/scheduler";
 import { startHealthServer, stopHealthServer } from "../daemon/health";
 import { writePid, readPid, removePid, isProcessAlive } from "../daemon/pid";
 import { GRACEFUL_SHUTDOWN_MS } from "../daemon/types";
@@ -73,11 +73,9 @@ export async function runDaemonStart(
   writePid(PID_PATH, process.pid);
   log.info(`Daemon starting (PID ${process.pid})...`);
 
-  const scheduler = new Scheduler(config.daemon, async (source, _onProgress) => {
+  const scheduler = new Scheduler(config.daemon, async (source, onProgress) => {
     if (source === "embed") {
-      // runEmbed already processes messages then chunks sequentially.
-      // Task 7 will add onProgress support; for now just run quietly.
-      await runEmbed(db, { limit: "500", quiet: true });
+      await runEmbed(db, { limit: "500", quiet: true, onProgress });
     } else {
       const connector = connectorMap[source];
       if (!connector) {
