@@ -7,10 +7,11 @@ import { claudeCodeConnector } from "../connectors/claude-code";
 import { markdownConnector } from "../connectors/markdown";
 import { gmailConnector } from "../connectors/gmail";
 import { whatsappConnector } from "../connectors/whatsapp";
+import { discordConnector } from "../connectors/discord";
 import { runEmbed } from "./embed";
 import * as log from "../lib/logger";
 
-const connectors = [slackConnector, telegramConnector, linearConnector, claudeCodeConnector, markdownConnector, gmailConnector, whatsappConnector];
+const connectors = [slackConnector, telegramConnector, linearConnector, claudeCodeConnector, markdownConnector, gmailConnector, whatsappConnector, discordConnector];
 
 export async function runSync(
   db: TraulDB,
