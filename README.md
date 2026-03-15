@@ -21,7 +21,11 @@ Supported connectors:
 ## Requirements
 
 - [Bun](https://bun.sh) v1.0+
+- [Homebrew SQLite](https://formulae.brew.sh/formula/sqlite) (macOS — Apple's SQLite lacks extension support)
 - [Ollama](https://ollama.com) (optional, for vector embeddings)
+- [Python 3](https://www.python.org) + [Telethon](https://docs.telethon.dev) (optional, for Telegram sync)
+
+See **[Getting Started](docs/getting-started.md)** for a full walkthrough with all prerequisites.
 
 ## Install
 
@@ -47,7 +51,7 @@ bun link
 | `TELEGRAM_API_HASH` | Telegram API app hash |
 | `TRAUL_DB_PATH` | Custom database path |
 | `OLLAMA_URL` | Ollama server URL (default: `http://localhost:11434`) |
-| `TRAUL_EMBED_MODEL` | Embedding model (default: `nomic-embed-text`) |
+| `TRAUL_EMBED_MODEL` | Embedding model (default: `snowflake-arctic-embed2`) |
 
 ### Config file
 
