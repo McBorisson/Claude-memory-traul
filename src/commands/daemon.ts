@@ -75,7 +75,7 @@ export async function runDaemonStart(
 
   const scheduler = new Scheduler(config.daemon, async (source, onProgress) => {
     if (source === "embed") {
-      await runEmbed(db, { limit: "500", quiet: true, onProgress });
+      await runEmbed(db, { limit: "10000", onProgress });
     } else {
       const connector = connectorMap[source];
       if (!connector) {

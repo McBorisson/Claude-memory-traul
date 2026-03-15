@@ -32,16 +32,16 @@ Each source and embed get an independent `setInterval` loop. A boolean "running"
 
 ### Default Intervals
 
-| Source | Interval | Priority |
-|--------|----------|----------|
-| slack | 300s (5min) | 1 - messenger |
-| telegram | 300s (5min) | 2 - messenger |
-| whatsapp | 300s (5min) | 3 - messenger |
-| linear | 600s (10min) | 4 |
-| claude-code | 600s (10min) | 5 |
-| gmail | 600s (10min) | 6 |
-| markdown | 600s (10min) | 7 |
-| embed | 300s (5min) | 8 |
+| Source      | Interval     | Priority      |
+| ----------- | ------------ | ------------- |
+| slack       | 300s (5min)  | 1 - messenger |
+| telegram    | 300s (5min)  | 2 - messenger |
+| whatsapp    | 300s (5min)  | 3 - messenger |
+| linear      | 600s (10min) | 4             |
+| claude-code | 600s (10min) | 5             |
+| gmail       | 600s (10min) | 6             |
+| markdown    | 600s (10min) | 7             |
+| embed       | 300s (5min)  | 8             |
 
 ### Startup Order
 
@@ -139,6 +139,7 @@ Skip cycle, log warning, retry at normal interval. No backoff — it's a local s
 ### Graceful Shutdown
 
 SIGTERM/SIGINT handler:
+
 1. Stop all interval timers
 2. Wait up to 10s for any running sync/embed to finish
 3. Close health server
@@ -170,6 +171,7 @@ src/lib/config.ts      # Add daemon config types/defaults
 ## Dependencies
 
 No new dependencies. Uses:
+
 - `Bun.serve` for health endpoint
 - `Bun.spawn` / `process.kill` for detach/stop
 - Existing connectors and embed code
