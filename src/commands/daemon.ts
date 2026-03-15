@@ -14,6 +14,7 @@ import { claudeCodeConnector } from "../connectors/claude-code";
 import { markdownConnector } from "../connectors/markdown";
 import { gmailConnector } from "../connectors/gmail";
 import { whatsappConnector } from "../connectors/whatsapp";
+import { discordConnector } from "../connectors/discord";
 import { runEmbed } from "./embed";
 import * as log from "../lib/logger";
 
@@ -29,6 +30,7 @@ const connectorMap: Record<string, { sync: (db: TraulDB, config: TraulConfig) =>
   "claude-code": claudeCodeConnector,
   gmail: gmailConnector,
   markdown: markdownConnector,
+  discord: discordConnector,
 };
 
 export async function runDaemonStart(
