@@ -43,6 +43,17 @@ export interface TraulConfig {
       chats: string[];
     }>;
   };
+  discord: {
+    token: string;
+    servers: {
+      allowlist: string[];
+      stoplist: string[];
+    };
+    channels: {
+      allowlist: string[];
+      stoplist: string[];
+    };
+  };
   daemon: DaemonConfig;
 }
 
@@ -60,6 +71,11 @@ function getDefaultConfig(): TraulConfig {
     markdown: { dirs: [] },
     gmail: { client_id: "", client_secret: "", refresh_token: "", accounts: [] },
     whatsapp: { instances: [] },
+    discord: {
+      token: "",
+      servers: { allowlist: [], stoplist: [] },
+      channels: { allowlist: [], stoplist: [] },
+    },
     daemon: { port: DEFAULT_PORT, intervals: { ...DEFAULT_INTERVALS } },
   };
 }
@@ -103,6 +119,12 @@ export function loadConfig(): TraulConfig {
       defaults.gmail.accounts = parsed.gmail?.accounts ?? defaults.gmail.accounts;
       // WhatsApp
       defaults.whatsapp.instances = parsed.whatsapp?.instances ?? defaults.whatsapp.instances;
+      // Discord
+      defaults.discord.token = parsed.discord?.token ?? defaults.discord.token;
+      defaults.discord.servers.allowlist = parsed.discord?.servers?.allowlist ?? defaults.discord.servers.allowlist;
+      defaults.discord.servers.stoplist = parsed.discord?.servers?.stoplist ?? defaults.discord.servers.stoplist;
+      defaults.discord.channels.allowlist = parsed.discord?.channels?.allowlist ?? defaults.discord.channels.allowlist;
+      defaults.discord.channels.stoplist = parsed.discord?.channels?.stoplist ?? defaults.discord.channels.stoplist;
     } catch {
       // ignore malformed config, use defaults
     }
@@ -151,6 +173,7 @@ export function loadConfig(): TraulConfig {
   defaults.gmail.client_id = process.env.GMAIL_CLIENT_ID ?? defaults.gmail.client_id;
   defaults.gmail.client_secret = process.env.GMAIL_CLIENT_SECRET ?? defaults.gmail.client_secret;
   defaults.gmail.refresh_token = process.env.GMAIL_REFRESH_TOKEN ?? defaults.gmail.refresh_token;
+  defaults.discord.token = process.env.DISCORD_TOKEN ?? defaults.discord.token;
   // Collect all LINEAR_API_KEY_<WORKSPACE> env vars into workspaces
   const envWorkspaceNames = new Set(defaults.linear.workspaces.map((w) => w.name));
   for (const [key, val] of Object.entries(process.env)) {
