@@ -19,6 +19,7 @@ async function embedItems(
   label: string,
   quiet: boolean,
   chunkFn?: (id: number, content: string) => void,
+  onBatchDone?: (done: number, failed: number) => void,
 ): Promise<{ done: number; failed: number; elapsed: number }> {
   let done = 0;
   let failed = 0;
@@ -70,6 +71,8 @@ async function embedItems(
         process.stderr.write(`\n  ! ${label} batch at ${i}: ${errMsg}\n`);
       }
     }
+
+    onBatchDone?.(done, failed);
 
     if (!quiet) {
       const elapsed = Date.now() - startTime;
@@ -142,8 +145,9 @@ export async function runEmbed(
         const chunks = chunkText(content);
         db.replaceChunks(id, chunks);
       },
+      (done, failed) => { doneTotal = done + failed; reportProgress(); },
     );
-    doneTotal += r.done + r.failed;
+    doneTotal = r.done + r.failed;
     reportProgress();
     if (!options.quiet) {
       console.log(`Messages: ${r.done} embedded, ${r.failed} failed in ${formatDuration(r.elapsed)}.`);
@@ -155,13 +159,16 @@ export async function runEmbed(
   // Embed chunks (re-fetch since chunking during messages phase may have created new ones)
   const chunks = db.getUnembeddedChunks(batchLimit);
   if (chunks.length > 0) {
+    const msgDone = doneTotal;
     const r = await embedItems(
       chunks,
       (id, emb) => db.insertChunkEmbedding(id, emb),
       "chunks",
-      !!options.quiet
+      !!options.quiet,
+      undefined,
+      (done, failed) => { doneTotal = msgDone + done + failed; reportProgress(); },
     );
-    doneTotal += r.done + r.failed;
+    doneTotal = msgDone + r.done + r.failed;
     reportProgress();
     if (!options.quiet) {
       console.log(`Chunks: ${r.done} embedded, ${r.failed} failed in ${formatDuration(r.elapsed)}.`);
