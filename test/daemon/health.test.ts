@@ -1,6 +1,9 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import { startHealthServer, stopHealthServer } from "../../src/daemon/health";
+import { loadConfig } from "../../src/lib/config";
 import type { SourceState } from "../../src/daemon/types";
+
+const mockConfig = loadConfig();
 
 describe("health endpoint", () => {
   let port: number;
@@ -31,7 +34,7 @@ describe("health endpoint", () => {
     });
 
     port = 13847;
-    await startHealthServer(port, () => states);
+    await startHealthServer(port, () => states, mockConfig);
 
     const res = await fetch(`http://127.0.0.1:${port}/health`);
     expect(res.status).toBe(200);
@@ -50,7 +53,7 @@ describe("health endpoint", () => {
   it("/ aliases to /health", async () => {
     const states = new Map<string, SourceState>();
     port = 13848;
-    await startHealthServer(port, () => states);
+    await startHealthServer(port, () => states, mockConfig);
 
     const res = await fetch(`http://127.0.0.1:${port}/`);
     expect(res.status).toBe(200);
@@ -61,7 +64,7 @@ describe("health endpoint", () => {
   it("returns 404 for unknown paths", async () => {
     const states = new Map<string, SourceState>();
     port = 13849;
-    await startHealthServer(port, () => states);
+    await startHealthServer(port, () => states, mockConfig);
 
     const res = await fetch(`http://127.0.0.1:${port}/unknown`);
     expect(res.status).toBe(404);
@@ -72,7 +75,7 @@ describe("health endpoint", () => {
     const states = new Map<string, SourceState>();
 
     // Should not throw
-    await startHealthServer(13851, () => states);
+    await startHealthServer(13851, () => states, mockConfig);
 
     blocker.stop(true);
   });

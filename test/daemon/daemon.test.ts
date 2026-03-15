@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach } from "bun:test";
 import { Scheduler } from "../../src/daemon/scheduler";
 import { startHealthServer, stopHealthServer } from "../../src/daemon/health";
 import { DEFAULT_PORT, DEFAULT_INTERVALS } from "../../src/daemon/types";
+import { loadConfig } from "../../src/lib/config";
 
 describe("daemon integration", () => {
   let scheduler: Scheduler | null = null;
@@ -32,7 +33,7 @@ describe("daemon integration", () => {
     });
 
     const port = 13850;
-    await startHealthServer(port, () => scheduler!.getStates());
+    await startHealthServer(port, () => scheduler!.getStates(), loadConfig());
     scheduler.start();
 
     // Wait for staggered startup to fire first few sources (2s stagger each)

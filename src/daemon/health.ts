@@ -1,5 +1,38 @@
 import type { SourceState } from "./types";
+import type { TraulConfig } from "../lib/config";
 import * as log from "../lib/logger";
+
+type AuthStatus = "success" | "creds-empty" | "fail";
+
+function getAuthStatuses(config: TraulConfig, states: Map<string, SourceState>): Record<string, AuthStatus> {
+  const credsPresent: Record<string, boolean> = {
+    slack: !!config.slack.token,
+    telegram: !!config.telegram.api_id && !!config.telegram.api_hash,
+    whatsapp: config.whatsapp.instances.length > 0,
+    linear: !!config.linear.api_key,
+    "claude-code": true, // reads local files, no creds needed
+    gmail: !!config.gmail.client_id && !!config.gmail.refresh_token,
+    discord: !!config.discord.token,
+    markdown: true, // reads local files, no creds needed
+    embed: true, // internal task, no creds needed
+  };
+
+  const result: Record<string, AuthStatus> = {};
+  for (const [name, hasCreds] of Object.entries(credsPresent)) {
+    if (!hasCreds) {
+      result[name] = "creds-empty";
+    } else {
+      const state = states.get(name);
+      const lastErr = state?.lastError ?? "";
+      if (/401|403|auth|token|unauthorized|forbidden/i.test(lastErr)) {
+        result[name] = "fail";
+      } else {
+        result[name] = "success";
+      }
+    }
+  }
+  return result;
+}
 
 let server: ReturnType<typeof Bun.serve> | null = null;
 let startedAt: number = 0;
@@ -7,6 +40,7 @@ let startedAt: number = 0;
 export async function startHealthServer(
   port: number,
   getStates: () => Map<string, SourceState>,
+  config: TraulConfig,
 ): Promise<void> {
   startedAt = Date.now();
 
@@ -18,9 +52,11 @@ export async function startHealthServer(
         const url = new URL(req.url);
         if (url.pathname === "/health" || url.pathname === "/") {
           const states = getStates();
+          const auth = getAuthStatuses(config, states);
           const sources: Record<string, unknown> = {};
           for (const [name, state] of states) {
             sources[name] = {
+              auth: auth[name] ?? "creds-empty",
               last_run: state.lastRun,
               status: state.status,
               last_error: state.lastError,

@@ -75,7 +75,7 @@ export async function runDaemonStart(
 
   const scheduler = new Scheduler(config.daemon, async (source, onProgress) => {
     if (source === "embed") {
-      await runEmbed(db, { limit: "10000", onProgress });
+      await runEmbed(db, { limit: "10000", quiet: true, onProgress });
     } else {
       const connector = connectorMap[source];
       if (!connector) {
@@ -88,13 +88,18 @@ export async function runDaemonStart(
   });
 
   // Health endpoint
-  await startHealthServer(config.daemon.port, () => scheduler.getStates());
+  await startHealthServer(config.daemon.port, () => scheduler.getStates(), config);
 
   scheduler.start();
   log.info(`Daemon running. Health: http://127.0.0.1:${config.daemon.port}/health`);
 
   // Graceful shutdown
+  let shuttingDown = false;
   const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    // Clear any in-progress line (e.g. progress bar) before logging
+    process.stdout.write("\r" + " ".repeat(80) + "\r");
     log.info("Shutting down...");
     scheduler.stop();
     await scheduler.waitForRunning(GRACEFUL_SHUTDOWN_MS);
