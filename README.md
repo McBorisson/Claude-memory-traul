@@ -6,7 +6,7 @@ Traul aggregates messages from Slack, Telegram, and Linear into a local SQLite d
 
 ## Features
 
-- **Multi-source sync** — Slack (multi-workspace, xoxc/xoxb tokens), Telegram (via Telethon), Linear (multi-workspace GraphQL)
+- **Multi-source sync** — Slack (multi-workspace, xoxc/xoxb tokens), Telegram (via Telethon), Linear (multi-workspace GraphQL), Claude Code sessions, Markdown files
 - **Hybrid search** — FTS5 full-text search + vector similarity via Ollama embeddings
 - **Signal detection** — pattern-based alerts (e.g. stale threads) with dismiss/snooze
 - **Briefings** — structured daily summary with signal counts, message volume, and highlights
@@ -50,12 +50,8 @@ Optional JSON config at `~/.config/traul/config.json`:
 
 ```json
 {
-  "sources": {
-    "slack": {
-      "workspaces": {
-        "myteam": { "token": "xoxb-..." }
-      }
-    }
+  "markdown": {
+    "dirs": ["~/notes", "~/docs"]
   }
 }
 ```
@@ -70,6 +66,8 @@ traul sync
 traul sync slack
 traul sync telegram
 traul sync linear
+traul sync claude-code
+traul sync markdown
 
 # Search messages (hybrid search by default)
 traul search "deployment issue"
@@ -99,7 +97,7 @@ traul briefing
 ```
 src/
 ├── commands/       CLI command handlers
-├── connectors/     Source integrations (Slack, Telegram, Linear)
+├── connectors/     Source integrations (Slack, Telegram, Linear, Claude Code, Markdown)
 ├── db/             SQLite schema, queries, database wrapper
 ├── lib/            Config, embeddings, formatting, logging
 └── signals/        Pattern detection engine + definitions

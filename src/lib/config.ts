@@ -24,6 +24,9 @@ export interface TraulConfig {
     teams: string[];
     workspaces: Array<{ name: string; api_key: string; teams: string[] }>;
   };
+  markdown: {
+    dirs: string[];
+  };
 }
 
 const CONFIG_DIR = join(homedir(), ".config", "traul");
@@ -37,6 +40,7 @@ function getDefaultConfig(): TraulConfig {
     slack: { token: "", cookie: "", my_user_id: "", channels: [] },
     telegram: { api_id: "", api_hash: "", session_path: "", chats: [] },
     linear: { api_key: "", teams: [], workspaces: [] },
+    markdown: { dirs: [] },
   };
 }
 
@@ -69,6 +73,8 @@ export function loadConfig(): TraulConfig {
         parsed.linear?.teams ?? defaults.linear.teams;
       defaults.linear.workspaces =
         parsed.linear?.workspaces ?? defaults.linear.workspaces;
+      defaults.markdown.dirs =
+        parsed.markdown?.dirs ?? defaults.markdown.dirs;
     } catch {
       // ignore malformed config, use defaults
     }

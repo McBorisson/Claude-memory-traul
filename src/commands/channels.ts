@@ -27,7 +27,7 @@ export function runChannels(
     console.log(formatJSON(results));
   } else {
     for (const ch of results) {
-      const source = ch.source.padEnd(10);
+      const source = ch.source.padEnd(12);
       const name = (ch.channel_name ?? "(unknown)").padEnd(30);
       const count = `${ch.msg_count} msgs`.padStart(10);
       const last = `last: ${formatDate(ch.last_message)}`;
