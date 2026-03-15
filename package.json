@@ -15,9 +15,12 @@
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.8.0",
     "commander": "^13.1.0",
+    "googleapis": "^171.4.0",
+    "html-to-text": "^9.0.5",
     "sqlite-vec": "^0.1.7-alpha.2"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/html-to-text": "^9.0.4"
   }
 }
