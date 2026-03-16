@@ -25,6 +25,14 @@ function decodeBody(part: gmail_v1.Schema$MessagePart): string {
   return "";
 }
 
+const HTML_TO_TEXT_OPTIONS: Parameters<typeof htmlToText>[1] = {
+  wordwrap: false,
+  selectors: [
+    { selector: "img", format: "skip" },
+    { selector: "a", options: { ignoreHref: true } },
+  ],
+};
+
 function extractBody(payload: gmail_v1.Schema$MessagePart): string {
   if (payload.mimeType === "text/plain") {
     return decodeBody(payload);
@@ -38,7 +46,7 @@ function extractBody(payload: gmail_v1.Schema$MessagePart): string {
     }
     for (const part of payload.parts) {
       if (part.mimeType === "text/html") {
-        return htmlToText(decodeBody(part), { wordwrap: false });
+        return htmlToText(decodeBody(part), HTML_TO_TEXT_OPTIONS);
       }
     }
     for (const part of payload.parts) {
@@ -50,7 +58,7 @@ function extractBody(payload: gmail_v1.Schema$MessagePart): string {
   }
 
   if (payload.mimeType === "text/html") {
-    return htmlToText(decodeBody(payload), { wordwrap: false });
+    return htmlToText(decodeBody(payload), HTML_TO_TEXT_OPTIONS);
   }
 
   return "";
