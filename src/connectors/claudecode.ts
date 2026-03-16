@@ -43,7 +43,8 @@ function projectNameFromDir(dirName: string): string {
 }
 
 export const claudeCodeConnector: Connector = {
-  name: "claude-code",
+  defaultInterval: 600,
+  name: "claudecode",
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {
     const result: SyncResult = { messagesAdded: 0, messagesUpdated: 0, contactsAdded: 0 };
@@ -75,7 +76,7 @@ export const claudeCodeConnector: Connector = {
       for (const file of files) {
         const sessionId = basename(file, ".jsonl");
         const cursorKey = `session:${sessionId}`;
-        const lastCursor = db.getSyncCursor("claude-code", cursorKey);
+        const lastCursor = db.getSyncCursor("claudecode", cursorKey);
 
         const filePath = join(projPath, file);
         let lines: string[];
@@ -142,7 +143,7 @@ export const claudeCodeConnector: Connector = {
         // Store each meaningful exchange as a message
         for (const sm of sessionMessages) {
           db.upsertMessage({
-            source: "claude-code",
+            source: "claudecode",
             source_id: `cc:${sessionId}:${sm.uuid}`,
             channel_name: projectName,
             thread_id: sessionId,
@@ -159,7 +160,7 @@ export const claudeCodeConnector: Connector = {
               .query<{ id: number }, [string, string]>(
                 "SELECT id FROM messages WHERE source = ? AND source_id = ?"
               )
-              .get("claude-code", `cc:${sessionId}:${sm.uuid}`);
+              .get("claudecode", `cc:${sessionId}:${sm.uuid}`);
             if (msgRow) {
               const chunks = chunkText(sm.text, { docTitle: `${projectName} session` });
               db.replaceChunks(msgRow.id, chunks);
@@ -168,7 +169,7 @@ export const claudeCodeConnector: Connector = {
         }
 
         if (latestTimestamp) {
-          db.setSyncCursor("claude-code", cursorKey, latestTimestamp);
+          db.setSyncCursor("claudecode", cursorKey, latestTimestamp);
         }
       }
     }

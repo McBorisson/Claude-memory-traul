@@ -104,6 +104,8 @@ export function filterChannels(
 }
 
 export const discordConnector: Connector = {
+  defaultInterval: 300,
+  hasCredentials: (config) => !!config.discord.token,
   name: "discord",
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {

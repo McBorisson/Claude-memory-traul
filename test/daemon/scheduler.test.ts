@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { Scheduler } from "../../src/daemon/scheduler";
 import type { DaemonConfig } from "../../src/daemon/types";
-import { DEFAULT_INTERVALS, DEFAULT_PORT } from "../../src/daemon/types";
+import { DEFAULT_PORT, DEFAULT_EMBED_INTERVAL } from "../../src/daemon/types";
 
 describe("Scheduler", () => {
   let callLog: Array<{ source: string; time: number }>;
   let scheduler: Scheduler;
-  const config: DaemonConfig = { port: DEFAULT_PORT, intervals: { ...DEFAULT_INTERVALS } };
+  const config: DaemonConfig = { port: DEFAULT_PORT, intervals: { embed: DEFAULT_EMBED_INTERVAL } };
 
   beforeEach(() => {
     callLog = [];
@@ -35,15 +35,14 @@ describe("Scheduler", () => {
   it("mutex prevents overlapping runs of the same source", async () => {
     let running = 0;
     let maxConcurrent = 0;
-    const shortConfig = { port: DEFAULT_PORT, intervals: { ...DEFAULT_INTERVALS, slack: 1 } };
+    const shortConfig: DaemonConfig = { port: DEFAULT_PORT, intervals: { slack: 1 } };
 
-    const scheduler = new Scheduler(shortConfig, async (source, _onProgress) => {
-      if (source !== "slack") return;
+    const scheduler = new Scheduler(shortConfig, async (_source, _onProgress) => {
       running++;
       maxConcurrent = Math.max(maxConcurrent, running);
       await new Promise((r) => setTimeout(r, 2000));
       running--;
-    });
+    }, ["slack"]);
 
     scheduler.start();
     await new Promise((r) => setTimeout(r, 4000));
@@ -54,13 +53,12 @@ describe("Scheduler", () => {
   }, 10000);
 
   it("reports progress via onProgress callback", async () => {
-    const shortConfig = { port: DEFAULT_PORT, intervals: { ...DEFAULT_INTERVALS } };
+    const shortConfig: DaemonConfig = { port: DEFAULT_PORT, intervals: {} };
 
-    const scheduler = new Scheduler(shortConfig, async (source, onProgress) => {
-      if (source !== "slack") return;
+    const scheduler = new Scheduler(shortConfig, async (_source, onProgress) => {
       onProgress(50, "2026-03-15T11:00:00Z");
       onProgress(100, null);
-    });
+    }, ["slack"]);
 
     scheduler.start();
     await new Promise((r) => setTimeout(r, 500));

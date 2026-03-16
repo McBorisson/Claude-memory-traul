@@ -3,35 +3,16 @@ import { homedir } from "os";
 import type { TraulDB } from "../db/database";
 import type { TraulConfig } from "../lib/config";
 import { Scheduler } from "../daemon/scheduler";
-import { startHealthServer, stopHealthServer, getCredsPresent } from "../daemon/health";
+import { startHealthServer, stopHealthServer } from "../daemon/health";
 import { writePid, readPid, removePid, isProcessAlive } from "../daemon/pid";
-import { GRACEFUL_SHUTDOWN_MS, SOURCE_PRIORITY } from "../daemon/types";
-import type { DaemonIntervals } from "../daemon/types";
-import { slackConnector } from "../connectors/slack";
-import { telegramConnector } from "../connectors/telegram";
-import { linearConnector } from "../connectors/linear";
-import { claudeCodeConnector } from "../connectors/claude-code";
-import { markdownConnector } from "../connectors/markdown";
-import { gmailConnector } from "../connectors/gmail";
-import { whatsappConnector } from "../connectors/whatsapp";
-import { discordConnector } from "../connectors/discord";
+import { GRACEFUL_SHUTDOWN_MS } from "../daemon/types";
+import { getConnector, getConnectorNames, getCredsStatus } from "../connectors/registry";
 import { runEmbed } from "./embed";
 import * as log from "../lib/logger";
 
 const DATA_DIR = join(homedir(), ".local", "share", "traul");
 const PID_PATH = join(DATA_DIR, "daemon.pid");
 const LOG_PATH = join(DATA_DIR, "daemon.log");
-
-const connectorMap: Record<string, { sync: (db: TraulDB, config: TraulConfig) => Promise<any> }> = {
-  slack: slackConnector,
-  telegram: telegramConnector,
-  whatsapp: whatsappConnector,
-  linear: linearConnector,
-  "claude-code": claudeCodeConnector,
-  gmail: gmailConnector,
-  markdown: markdownConnector,
-  discord: discordConnector,
-};
 
 export async function runDaemonStart(
   db: TraulDB,
@@ -77,9 +58,10 @@ export async function runDaemonStart(
   log.info(`Daemon starting (PID ${process.pid})...`);
 
   // Check credentials and determine which sources to schedule
-  const credsPresent = getCredsPresent(config);
-  const enabled = SOURCE_PRIORITY.filter((s) => credsPresent[s]);
-  const missing = SOURCE_PRIORITY.filter((s) => !credsPresent[s]);
+  const credsPresent = getCredsStatus(config);
+  const allNames = getConnectorNames();
+  const enabled = allNames.filter((s) => credsPresent[s]);
+  const missing = allNames.filter((s) => !credsPresent[s]);
 
   log.info(`Configured sources: ${enabled.join(", ")}`);
   if (missing.length > 0) {
@@ -90,7 +72,7 @@ export async function runDaemonStart(
     if (source === "embed") {
       await runEmbed(db, { limit: "10000", quiet: true, onProgress });
     } else {
-      const connector = connectorMap[source];
+      const connector = getConnector(source);
       if (!connector) {
         log.warn(`Unknown source: ${source}`);
         return;
@@ -98,7 +80,7 @@ export async function runDaemonStart(
       const result = await connector.sync(db, config);
       log.info(`${source}: ${result.messagesAdded} added, ${result.contactsAdded} contacts`);
     }
-  }, enabled as Array<keyof DaemonIntervals>);
+  }, enabled);
 
   // Health endpoint
   await startHealthServer(config.daemon.port, () => scheduler.getStates(), config);

@@ -1,25 +1,12 @@
 import type { SourceState } from "./types";
 import type { TraulConfig } from "../lib/config";
+import { getCredsStatus } from "../connectors/registry";
 import * as log from "../lib/logger";
 
 type AuthStatus = "success" | "creds-empty" | "fail";
 
-export function getCredsPresent(config: TraulConfig): Record<string, boolean> {
-  return {
-    slack: !!config.slack.token,
-    telegram: !!config.telegram.api_id && !!config.telegram.api_hash,
-    whatsapp: config.whatsapp.instances.length > 0,
-    linear: !!config.linear.api_key,
-    "claude-code": true, // reads local files, no creds needed
-    gmail: !!config.gmail.client_id && !!config.gmail.refresh_token,
-    discord: !!config.discord.token,
-    markdown: true, // reads local files, no creds needed
-    embed: true, // internal task, no creds needed
-  };
-}
-
 function getAuthStatuses(config: TraulConfig, states: Map<string, SourceState>): Record<string, AuthStatus> {
-  const credsPresent = getCredsPresent(config);
+  const credsPresent = getCredsStatus(config);
 
   const result: Record<string, AuthStatus> = {};
   for (const [name, hasCreds] of Object.entries(credsPresent)) {

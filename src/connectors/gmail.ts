@@ -221,6 +221,8 @@ async function syncAccount(
 }
 
 export const gmailConnector: Connector = {
+  defaultInterval: 600,
+  hasCredentials: (config) => !!config.gmail.client_id && !!config.gmail.client_secret && !!config.gmail.refresh_token,
   name: "gmail",
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {

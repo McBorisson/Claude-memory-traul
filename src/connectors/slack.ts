@@ -6,6 +6,8 @@ import * as log from "../lib/logger";
 
 export const slackConnector: Connector = {
   name: "slack",
+  defaultInterval: 300,
+  hasCredentials: (config) => !!config.slack.token,
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {
     if (!config.slack.token) {

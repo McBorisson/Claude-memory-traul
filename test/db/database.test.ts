@@ -163,7 +163,7 @@ describe("TraulDB", () => {
 
       // Insert a long message that will be chunked
       db.upsertMessage({
-        source: "claude-code",
+        source: "claudecode",
         source_id: "cc:sess1:uuid1",
         channel_name: "traul",
         author_name: "claude",

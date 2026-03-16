@@ -253,6 +253,8 @@ async function syncWorkspace(
 }
 
 export const linearConnector: Connector = {
+  defaultInterval: 600,
+  hasCredentials: (config) => !!config.linear.api_key,
   name: "linear",
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {

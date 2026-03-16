@@ -49,6 +49,7 @@ function channelFromPath(filePath: string, baseDir: string): string {
 
 export const markdownConnector: Connector = {
   name: "markdown",
+  defaultInterval: 600,
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {
     const result: SyncResult = { messagesAdded: 0, messagesUpdated: 0, contactsAdded: 0 };

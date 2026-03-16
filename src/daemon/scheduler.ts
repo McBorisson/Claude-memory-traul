@@ -1,5 +1,6 @@
-import type { DaemonConfig, DaemonIntervals, SourceState } from "./types";
-import { SOURCE_PRIORITY, STAGGER_MS, MAX_BACKOFF_S } from "./types";
+import type { DaemonConfig, SourceState } from "./types";
+import { STAGGER_MS, MAX_BACKOFF_S } from "./types";
+import { getConnectorNames, getDefaultInterval } from "../connectors/registry";
 import * as log from "../lib/logger";
 
 export type ProgressCallback = (pct: number, eta: string | null) => void;
@@ -15,14 +16,14 @@ interface SourceEntry {
 export class Scheduler {
   private sources = new Map<string, SourceEntry>();
   private stopped = false;
-  private enabledSources: Array<keyof DaemonIntervals>;
+  private enabledSources: string[];
 
   constructor(
     private config: DaemonConfig,
     private runFn: RunFn,
-    enabledSources?: Array<keyof DaemonIntervals>,
+    enabledSources?: string[],
   ) {
-    this.enabledSources = enabledSources ?? [...SOURCE_PRIORITY];
+    this.enabledSources = enabledSources ?? getConnectorNames();
   }
 
   getStates(): Map<string, SourceState> {
@@ -59,7 +60,7 @@ export class Scheduler {
     const entry = this.sources.get(source);
     if (!entry || this.stopped) return;
 
-    const intervalS = this.config.intervals[source as keyof DaemonIntervals] ?? 300;
+    const intervalS = (this.config.intervals as Record<string, number>)[source] ?? getDefaultInterval(source);
     entry.timer = setTimeout(() => {
       if (this.stopped) return;
       this.tick(source);

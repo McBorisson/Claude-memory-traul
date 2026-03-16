@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import { DEFAULT_INTERVALS, DEFAULT_PORT, type DaemonConfig, type DaemonIntervals } from "../daemon/types";
+import { DEFAULT_PORT, DEFAULT_EMBED_INTERVAL, type DaemonConfig, type DaemonIntervals } from "../daemon/types";
 
 export interface TraulConfig {
   sync_start: string;
@@ -76,7 +76,7 @@ function getDefaultConfig(): TraulConfig {
       servers: { allowlist: [], stoplist: [] },
       channels: { allowlist: [], stoplist: [] },
     },
-    daemon: { port: DEFAULT_PORT, intervals: { ...DEFAULT_INTERVALS } },
+    daemon: { port: DEFAULT_PORT, intervals: { embed: DEFAULT_EMBED_INTERVAL } },
   };
 }
 
@@ -219,12 +219,13 @@ export function saveDefaultConfig(): void {
 
 export function loadDaemonConfig(parsed: Record<string, any>): DaemonConfig {
   const daemon = parsed?.daemon ?? {};
-  const intervals: DaemonIntervals = { ...DEFAULT_INTERVALS };
+  const intervals: DaemonIntervals = { embed: DEFAULT_EMBED_INTERVAL };
 
-  if (daemon.intervals) {
-    for (const key of Object.keys(DEFAULT_INTERVALS) as Array<keyof DaemonIntervals>) {
-      if (typeof daemon.intervals[key] === "number") {
-        intervals[key] = daemon.intervals[key];
+  // Merge user-configured intervals (any connector name is valid)
+  if (daemon.intervals && typeof daemon.intervals === "object") {
+    for (const [key, val] of Object.entries(daemon.intervals)) {
+      if (typeof val === "number") {
+        intervals[key] = val;
       }
     }
   }

@@ -181,6 +181,8 @@ async function syncInstance(
 }
 
 export const whatsappConnector: Connector = {
+  defaultInterval: 300,
+  hasCredentials: (config) => config.whatsapp.instances.length > 0,
   name: "whatsapp",
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {

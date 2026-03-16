@@ -85,6 +85,8 @@ async function listChats(limit: number = 10000, since?: string): Promise<TgChat[
 }
 
 export const telegramConnector: Connector = {
+  defaultInterval: 300,
+  hasCredentials: (config) => !!config.telegram.api_id && !!config.telegram.api_hash,
   name: "telegram",
 
   async sync(db: TraulDB, config: TraulConfig): Promise<SyncResult> {

@@ -1,14 +1,5 @@
-export interface DaemonIntervals {
-  slack: number;
-  telegram: number;
-  whatsapp: number;
-  linear: number;
-  "claude-code": number;
-  gmail: number;
-  discord: number;
-  markdown: number;
-  embed: number;
-}
+/** Per-source polling intervals in seconds. Keys are connector names. */
+export type DaemonIntervals = Record<string, number>;
 
 export interface DaemonConfig {
   port: number;
@@ -33,30 +24,8 @@ export interface SourceState {
 
 export const DEFAULT_PORT = 3847;
 
-export const DEFAULT_INTERVALS: DaemonIntervals = {
-  slack: 300,
-  telegram: 300,
-  whatsapp: 300,
-  linear: 600,
-  "claude-code": 600,
-  gmail: 600,
-  discord: 300,
-  markdown: 600,
-  embed: 300,
-};
-
-// Priority order for startup stagger
-export const SOURCE_PRIORITY: Array<keyof DaemonIntervals> = [
-  "slack",
-  "telegram",
-  "whatsapp",
-  "linear",
-  "claude-code",
-  "gmail",
-  "discord",
-  "markdown",
-  "embed",
-];
+/** Embed is a built-in task, not a connector — its default interval lives here */
+export const DEFAULT_EMBED_INTERVAL = 300;
 
 export const STAGGER_MS = 2000;
 export const GRACEFUL_SHUTDOWN_MS = 10_000;

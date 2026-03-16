@@ -1,29 +1,22 @@
 import type { TraulDB } from "../db/database";
 import type { TraulConfig } from "../lib/config";
-import { slackConnector } from "../connectors/slack";
-import { telegramConnector } from "../connectors/telegram";
-import { linearConnector } from "../connectors/linear";
-import { claudeCodeConnector } from "../connectors/claude-code";
-import { markdownConnector } from "../connectors/markdown";
-import { gmailConnector } from "../connectors/gmail";
-import { whatsappConnector } from "../connectors/whatsapp";
-import { discordConnector } from "../connectors/discord";
+import { getConnectors, getConnectorNames } from "../connectors/registry";
 import { runEmbed } from "./embed";
 import * as log from "../lib/logger";
-
-const connectors = [slackConnector, telegramConnector, linearConnector, claudeCodeConnector, markdownConnector, gmailConnector, whatsappConnector, discordConnector];
 
 export async function runSync(
   db: TraulDB,
   config: TraulConfig,
   source?: string
 ): Promise<void> {
+  const connectors = getConnectors();
   const toRun = source
     ? connectors.filter((c) => c.name === source)
     : connectors;
 
   if (toRun.length === 0) {
-    log.error(`Unknown source: ${source}`);
+    const names = getConnectorNames().join(", ");
+    log.error(`Unknown source: ${source}. Available: ${names}`);
     process.exit(1);
   }
 
