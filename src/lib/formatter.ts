@@ -34,10 +34,11 @@ function sanitizeContent(content: string, maxLen: number = 500): string {
 
 export function formatJSON(data: unknown): string {
   // Sanitize message content to prevent JSON parse issues with piped output
+  // No length truncation — JSON consumers expect full data
   if (Array.isArray(data)) {
     data = data.map((item: Record<string, unknown>) => {
       if (item && typeof item === "object" && typeof item.content === "string") {
-        return { ...item, content: sanitizeContent(item.content) };
+        return { ...item, content: sanitizeContent(item.content, Infinity) };
       }
       return item;
     });
