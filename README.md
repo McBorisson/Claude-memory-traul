@@ -1,39 +1,44 @@
 # traul
 
-Personal Intelligence Engine — aggregates communication streams into a searchable local index.
+Give your AI agent memory across all your communications.
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-Traul syncs messages from multiple sources into a local SQLite database with full-text and vector search. All data stays on your machine.
+## The Problem
 
-Supported connectors:
-- Slack
-- Discord
-- Telegram
-- Gmail
-- Linear
-- WhatsApp (via WAHA)
-- Markdown files
-- Claude Code sessions
+Every time you ask your AI agent to find something — a Slack thread, an email, a Telegram message — it has to request items one by one from each source. It can never see the full picture. You end up being the middleman: searching manually, copy-pasting context, bridging the gap between your agent and your data.
 
-## Features
+I built Traul to fix this. It creates a searchable, local-only index across all your communication channels — Slack, Discord, Telegram, Gmail, Linear, WhatsApp, and more. Your agent gets a single tool that searches everything at once, with semantic understanding. Instead of you hunting for context, your agent finds it on its own.
 
-- **Multi-source sync** — Slack (multi-workspace, xoxc/xoxb tokens), Discord (bot token, server/channel filtering), Telegram (via Telethon), Gmail (OAuth2, multi-account, label filtering), Linear (multi-workspace GraphQL), WhatsApp (via WAHA), Claude Code sessions, Markdown files
-- **Hybrid search** — FTS5 full-text search + vector similarity via Ollama embeddings
-- **Background daemon** — scheduled sync and embedding with health monitoring
-- **Contact dedup** (WIP) — basic identity tracking across sources, proper contact API planned
-- **Local-first** — all data stays in a local SQLite database
+## What This Looks Like in Practice
 
-## Requirements
+**Track a project across scattered conversations.** An integration is being discussed in Slack, Telegram, and various group chats simultaneously. Your agent sees through all of them at once — who's blocking, whose court the ball is in, what the next steps are.
 
-- [Bun](https://bun.sh) v1.0+
-- [Homebrew SQLite](https://formulae.brew.sh/formula/sqlite) (macOS — Apple's SQLite lacks extension support)
-- [Ollama](https://ollama.com) (optional, for vector embeddings)
-- [Python 3](https://www.python.org) + [Telethon](https://docs.telethon.dev) (optional, for Telegram sync)
+**Monitor your community.** Ask your agent to summarize what users are writing in your Discord. Get a clear breakdown: main topics this week, overall sentiment, what people are unhappy about, most requested features, how attitudes are shifting over time. Minutes, not hours.
 
-See **[Getting Started](docs/getting-started.md)** for a full walkthrough with all prerequisites.
+**Find anything you've ever received.** Someone sent you a relevant link weeks ago — but where? Telegram? Slack? Email? Your agent searches across all your history with semantic search that works far better than keyword matching. It finds the exact message without you remembering which app it was in.
 
-## Install
+**Prep for a meeting in seconds.** Before a call with a recruiter, ask your agent to find everything related to that person. It pulls up the email thread, the LinkedIn message, the calendar invite — across all your connected sources.
+
+**Stop remembering where things live.** The agent tries different keywords, reads intermediate results, follows the chain, and arrives at the answer. You don't need to remember if it was in Slack, Telegram, or your task tracker.
+
+## Privacy First
+
+All data stays on your machine. No APIs, no external services, no cloud sync. Traul indexes and stores everything in a local SQLite database. Nothing is sent to third parties. Your communications remain yours.
+
+## Connectors
+
+Slack · Discord · Telegram · Gmail · Linear · WhatsApp · Claude Code sessions · Markdown files
+
+## How It Works
+
+Traul syncs messages from your connected sources into a local SQLite database. It builds both a full-text index (FTS5) and vector embeddings (via local Ollama) for hybrid search. Your AI agent — or you directly from the terminal — queries this unified index.
+
+```
+Your sources → Traul sync → Local SQLite (FTS5 + vectors) → Agent search tool
+```
+
+## Quick Start
 
 ```sh
 git clone <repo-url> && cd traul
@@ -41,142 +46,63 @@ bun install
 bun link
 ```
 
-## Configuration
+**Requirements:** [Bun](https://bun.sh) v1.0+, [Homebrew SQLite](https://formulae.brew.sh/formula/sqlite) (macOS), optionally [Ollama](https://ollama.com) for vector search.
 
-### Environment variables
-
-| Variable | Description |
-|----------|-------------|
-| `SLACK_TOKEN` | Default Slack token (xoxb or xoxc) |
-| `SLACK_COOKIE` | Browser cookie (required for xoxc tokens) |
-| `SLACK_TOKEN_<WORKSPACE>` | Per-workspace Slack token |
-| `SLACK_COOKIE_<WORKSPACE>` | Per-workspace cookie |
-| `DISCORD_TOKEN` | Discord bot token |
-| `TELEGRAM_API_ID` | Telegram API app ID |
-| `TELEGRAM_API_HASH` | Telegram API app hash |
-| `GMAIL_CLIENT_ID` | Gmail OAuth2 client ID |
-| `GMAIL_CLIENT_SECRET` | Gmail OAuth2 client secret |
-| `GMAIL_REFRESH_TOKEN` | Gmail OAuth2 refresh token |
-| `GMAIL_CREDS_JSON` | Combined Gmail credentials JSON (alternative) |
-| `LINEAR_API_KEY` | Default Linear API key |
-| `LINEAR_API_KEY_<WORKSPACE>` | Per-workspace Linear key |
-| `TRAUL_DB_PATH` | Custom database path |
-| `OLLAMA_URL` | Ollama server URL (default: `http://localhost:11434`) |
-| `TRAUL_EMBED_MODEL` | Embedding model (default: `snowflake-arctic-embed2`) |
-
-### Config file
-
-Optional JSON config at `~/.config/traul/config.json`:
-
-```json
-{
-  "markdown": {
-    "dirs": ["~/notes", "~/docs"]
-  },
-  "discord": {
-    "token": "...",
-    "servers": { "allowlist": ["guild-id"] },
-    "channels": { "stoplist": ["channel-id"] }
-  },
-  "gmail": {
-    "client_id": "...",
-    "client_secret": "...",
-    "refresh_token": "...",
-    "accounts": [{ "name": "work", "labels": ["INBOX"] }]
-  },
-  "whatsapp": {
-    "instances": [{ "name": "main", "url": "http://localhost:3000", "api_key": "...", "session": "default" }]
-  },
-  "daemon": {
-    "port": 7333,
-    "intervals": { "embed": 600 }
-  }
-}
-```
+See **[Getting Started](docs/getting-started.md)** for the full setup walkthrough.
 
 ## Usage
 
 ```sh
-# Sync messages from all configured sources
+# Sync all configured sources
 traul sync
 
 # Sync a specific source
 traul sync slack
 traul sync discord
 traul sync telegram
-traul sync gmail
-traul sync linear
-traul sync whatsapp
-traul sync claudecode
-traul sync markdown
 
-# Search messages (hybrid vector+keyword by default, requires Ollama)
+# Search across everything (hybrid vector + keyword)
 traul search "deployment issue"
-traul search "metrics mixpanel registration" --source slack --after 2025-01-01
+traul search "marketing launch status" --source slack --after 2025-01-01
 
-# Keyword-only search (FTS5/BM25, no Ollama needed)
+# Keyword-only search (no Ollama needed)
 traul search "error" --fts
-
-# OR mode — match ANY term instead of ALL
-traul search "deposit withdraw broken" --fts --or
-
-# Substring search — bypasses FTS tokenization, useful for exact phrases
-traul search "how do I" --like -s discord -l 20
-
-# JSON output (available on search, messages, channels, stats)
-traul search "error" --fts --json
-
-# Generate embeddings for vector search
-traul embed
-traul embed --rechunk    # re-chunk long messages embedded before chunking
-traul reset-embed        # drop all embeddings and recreate
 
 # Browse channels and messages
 traul channels
-traul channels --search general --json
 traul messages general --limit 50
-traul messages --channel general --author john --after 2025-01-01 --asc
 
-# Ad-hoc SQL queries (read-only by default)
-traul sql "SELECT source, COUNT(*) as cnt FROM messages GROUP BY source"
-traul sql "SELECT * FROM sync_cursors" --json
-traul sql "UPDATE messages SET channel_name='new' WHERE channel_name='old'" --write
+# Generate embeddings for semantic search
+traul embed
 
-# Explore database schema
-traul schema
-traul schema --json
+# Background daemon for continuous sync
+traul daemon start --detach
 
-# Database statistics
+# Database stats
 traul stats
-traul stats --json
-
-# Background daemon
-traul daemon start           # foreground
-traul daemon start --detach  # background
-traul daemon stop
-traul daemon status
-
-# WhatsApp authentication
-traul whatsapp auth <account>
 ```
 
-## Architecture
+## Configuration
 
-```
-src/
-├── commands/       CLI command handlers
-├── connectors/     Source integrations (Slack, Discord, Telegram, Gmail, Linear, WhatsApp, Claude Code, Markdown)
-├── db/             SQLite schema, queries, database wrapper
-├── lib/            Config, embeddings, formatting, logging
-```
+Optional config at `~/.config/traul/config.json`. Environment variables for tokens:
 
-Data flows: **sources → connectors → SQLite (FTS5 + vec0) → search → user**.
+| Variable | Description |
+|----------|-------------|
+| `SLACK_TOKEN` | Slack token (xoxb or xoxc) |
+| `DISCORD_TOKEN` | Discord bot token |
+| `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | Telegram API credentials |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` | Gmail OAuth2 |
+| `LINEAR_API_KEY` | Linear API key |
+
+Per-workspace tokens supported via `SLACK_TOKEN_<WORKSPACE>`, `LINEAR_API_KEY_<WORKSPACE>`.
+
+See **[Getting Started](docs/getting-started.md)** for full configuration details.
 
 ## Development
 
 ```sh
-bun test          # run tests
-bun run dev       # run CLI in dev mode
+bun test
+bun run dev
 ```
 
 ## Contributing
@@ -185,9 +111,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). All contributions require a DCO sign-off
 
 ## License
 
-This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
-
-This means:
-- You can use, modify, and distribute the code freely
-- If you modify and deploy it as a network service, you must release your source code
-- Contributions you make are licensed under the same terms
+[GNU Affero General Public License v3.0](LICENSE) — use, modify, and distribute freely. Network service deployments must release source code.
