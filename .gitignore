@@ -6,3 +6,7 @@ node_modules/
 *.db-shm
 .env
 .env.*
+dist/
+*.pem
+*.key
+credentials.json

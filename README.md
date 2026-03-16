@@ -2,7 +2,9 @@
 
 Personal Intelligence Engine — aggregates communication streams into a searchable local index.
 
-Traul syncs messages from multiple sources into a local SQLite database with full-text and vector search.
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
+Traul syncs messages from multiple sources into a local SQLite database with full-text and vector search. All data stays on your machine.
 
 Supported connectors:
 - Slack
@@ -177,6 +179,15 @@ bun test          # run tests
 bun run dev       # run CLI in dev mode
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). All contributions require a DCO sign-off.
+
 ## License
 
-Private.
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+This means:
+- You can use, modify, and distribute the code freely
+- If you modify and deploy it as a network service, you must release your source code
+- Contributions you make are licensed under the same terms
