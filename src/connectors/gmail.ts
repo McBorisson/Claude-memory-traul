@@ -98,11 +98,21 @@ async function syncAccount(
   const cursorKey = `${accountName}:all`;
   const existingCursor = db.getSyncCursor("gmail", cursorKey);
   const syncStartTs = getSyncStartTimestamp(config, "gmail");
-  const afterEpochMs = existingCursor
-    ? parseInt(existingCursor)
-    : syncStartTs !== "0"
-      ? parseInt(syncStartTs) * 1000
-      : undefined;
+
+  // Gmail cursor is stored in ms; sync_start is in seconds. Compare in seconds.
+  let afterEpochMs: number | undefined;
+  if (existingCursor) {
+    const cursorSec = Math.floor(parseInt(existingCursor) / 1000);
+    const syncStartSec = syncStartTs !== "0" ? parseInt(syncStartTs) : undefined;
+    if (syncStartSec && syncStartSec < cursorSec) {
+      // Config sync_start moved earlier — backfill
+      afterEpochMs = syncStartSec * 1000;
+    } else {
+      afterEpochMs = parseInt(existingCursor);
+    }
+  } else {
+    afterEpochMs = syncStartTs !== "0" ? parseInt(syncStartTs) * 1000 : undefined;
+  }
 
   let query = "";
   if (afterEpochMs) {

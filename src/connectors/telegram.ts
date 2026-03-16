@@ -152,19 +152,27 @@ export const telegramConnector: Connector = {
       // Get last known message ID for this chat to use as min_id
       const cursorKey = `msg_id:${chat.id}`;
       const lastMsgId = db.getSyncCursor("telegram", cursorKey);
-      const minId = lastMsgId ? parseInt(lastMsgId) : 0;
+      let minId = lastMsgId ? parseInt(lastMsgId) : 0;
 
-      // Calculate offset_date for initial sync (default: 30 days)
+      // Calculate offset_date: use sync_start if it's earlier than cursor (backfill)
       let offsetDate: string | undefined;
+      const cursorDateKey = `chat:${chat.id}`;
+      const cursorValue = db.getSyncCursor("telegram", cursorDateKey);
+
       if (minId === 0) {
-        const cursorDateKey = `chat:${chat.id}`;
-        const cursorValue = db.getSyncCursor("telegram", cursorDateKey);
         const referenceTs = cursorValue
           ? Math.floor(new Date(cursorValue).getTime() / 1000)
           : syncStartTs !== "0" ? parseInt(syncStartTs)
           : Math.floor((Date.now() - 30 * 86400_000) / 1000);
 
         offsetDate = new Date(referenceTs * 1000).toISOString();
+      } else if (cursorValue && syncStartTs !== "0") {
+        // Backfill: if sync_start is earlier than existing cursor, reset to re-fetch from sync_start
+        const cursorSec = Math.floor(new Date(cursorValue).getTime() / 1000);
+        if (parseInt(syncStartTs) < cursorSec) {
+          minId = 0;
+          offsetDate = new Date(parseInt(syncStartTs) * 1000).toISOString();
+        }
       }
 
       bulkSpecs.push({

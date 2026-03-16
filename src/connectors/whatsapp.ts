@@ -1,6 +1,6 @@
 import type { Connector, SyncResult } from "./types";
 import type { TraulDB } from "../db/database";
-import { type TraulConfig, getSyncStartTimestamp } from "../lib/config";
+import { type TraulConfig, getEffectiveSyncStart } from "../lib/config";
 import * as log from "../lib/logger";
 
 interface WahaChat {
@@ -83,14 +83,11 @@ async function syncInstance(
 
   log.info(`  [${name}] Syncing ${allChats.length} chats...`);
 
-  const syncStartTs = getSyncStartTimestamp(config);
-  const syncStartEpoch = syncStartTs !== "0" ? parseInt(syncStartTs) : 0;
-
   for (const chat of allChats) {
     const chatName = chat.name || chat.id;
     const cursorKey = `${name}:chat:${chat.id}`;
-    const existingCursor = db.getSyncCursor("whatsapp", cursorKey);
-    const afterTs = existingCursor ? parseInt(existingCursor) : syncStartEpoch;
+    const effectiveStart = getEffectiveSyncStart(db, config, "whatsapp", cursorKey);
+    const afterTs = effectiveStart ? parseInt(effectiveStart) : 0;
 
     log.info(`    ${chatName}`);
 

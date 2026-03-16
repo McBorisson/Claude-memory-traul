@@ -76,7 +76,15 @@ export const claudeCodeConnector: Connector = {
       for (const file of files) {
         const sessionId = basename(file, ".jsonl");
         const cursorKey = `session:${sessionId}`;
-        const lastCursor = db.getSyncCursor("claudecode", cursorKey);
+        let lastCursor = db.getSyncCursor("claudecode", cursorKey);
+
+        // If sync_start is earlier than cursor, ignore cursor to backfill
+        if (lastCursor && syncStartSec > 0) {
+          const cursorSec = Math.floor(new Date(lastCursor).getTime() / 1000);
+          if (syncStartSec < cursorSec) {
+            lastCursor = null;
+          }
+        }
 
         const filePath = join(projPath, file);
         let lines: string[];

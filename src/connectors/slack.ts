@@ -1,7 +1,7 @@
 import { WebClient, LogLevel } from "@slack/web-api";
 import type { Connector, SyncResult } from "./types";
 import type { TraulDB } from "../db/database";
-import { type TraulConfig, getSyncStartTimestamp } from "../lib/config";
+import { type TraulConfig, getEffectiveSyncStart } from "../lib/config";
 import * as log from "../lib/logger";
 
 export const slackConnector: Connector = {
@@ -108,7 +108,7 @@ export const slackConnector: Connector = {
     for (const channel of channelIds) {
       log.info(`  #${channel.name}`);
       const cursorKey = `channel:${channel.id}`;
-      const oldest = db.getSyncCursor("slack", cursorKey) ?? getSyncStartTimestamp(config);
+      const oldest = getEffectiveSyncStart(db, config, "slack", cursorKey) ?? "0";
       let latestTs = oldest;
       let channelMsgCount = 0;
 

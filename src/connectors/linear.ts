@@ -175,7 +175,11 @@ async function syncWorkspace(
   for (const teamId of passes) {
     const cursorKey = `${workspaceName}:${teamId ? `team:${teamId}` : "all"}`;
     const lastSync = db.getSyncCursor("linear", cursorKey);
-    const updatedAfter = lastSync ?? syncStartDate;
+    // If sync_start is earlier than cursor, backfill from sync_start
+    let updatedAfter = lastSync ?? syncStartDate;
+    if (lastSync && syncStartDate && syncStartDate < lastSync) {
+      updatedAfter = syncStartDate;
+    }
 
     let after: string | null = null;
     let latestUpdated: string | null = null;

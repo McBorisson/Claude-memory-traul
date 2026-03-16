@@ -193,6 +193,33 @@ export function getSyncStartTimestamp(config: TraulConfig, connector?: string): 
   return String(ts);
 }
 
+/**
+ * Returns the effective sync start timestamp, respecting config changes.
+ * If sync_start from config is earlier than the existing cursor, uses sync_start (backfill).
+ * This ensures that moving sync_start to an earlier date in config takes effect.
+ */
+export function getEffectiveSyncStart(
+  db: { getSyncCursor(source: string, key: string): string | null },
+  config: TraulConfig,
+  source: string,
+  cursorKey: string,
+  connector?: string,
+): string | undefined {
+  const cursor = db.getSyncCursor(source, cursorKey);
+  const syncStart = getSyncStartTimestamp(config, connector);
+
+  if (!cursor) {
+    return syncStart !== "0" ? syncStart : undefined;
+  }
+
+  // If sync_start is earlier than cursor, backfill from sync_start
+  if (syncStart !== "0" && parseInt(syncStart) < parseInt(cursor)) {
+    return syncStart;
+  }
+
+  return cursor;
+}
+
 /** Raw parsed config for per-connector overrides */
 let _rawParsed: Record<string, any> = {};
 export function getRawParsedConfig(): Record<string, any> {

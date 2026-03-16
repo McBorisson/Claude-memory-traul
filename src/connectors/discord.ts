@@ -256,7 +256,11 @@ export const discordConnector: Connector = {
       log.info(`  ${channelName}`);
 
       const cursorKey = `channel:${channel.id}`;
-      const cursor = db.getSyncCursor("discord", cursorKey) ?? initialSnowflake;
+      const existingCursor = db.getSyncCursor("discord", cursorKey);
+      // If sync_start produces an earlier snowflake than cursor, backfill
+      const cursor = existingCursor
+        ? BigInt(initialSnowflake) < BigInt(existingCursor) ? initialSnowflake : existingCursor
+        : initialSnowflake;
       let latestId = cursor;
       let channelMsgCount = 0;
       let afterMsg = cursor;
