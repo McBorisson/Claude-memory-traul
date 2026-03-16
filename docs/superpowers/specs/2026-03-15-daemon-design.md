@@ -38,7 +38,7 @@ Each source and embed get an independent `setInterval` loop. A boolean "running"
 | telegram    | 300s (5min)  | 2 - messenger |
 | whatsapp    | 300s (5min)  | 3 - messenger |
 | linear      | 600s (10min) | 4             |
-| claude-code | 600s (10min) | 5             |
+| claudecode | 600s (10min) | 5             |
 | gmail       | 600s (10min) | 6             |
 | markdown    | 600s (10min) | 7             |
 | embed       | 300s (5min)  | 8             |
@@ -73,7 +73,7 @@ Intervals are configurable via `~/.config/traul/config.json`:
       "telegram": 300,
       "whatsapp": 300,
       "linear": 600,
-      "claude-code": 600,
+      "claudecode": 600,
       "markdown": 600,
       "gmail": 600,
       "embed": 300

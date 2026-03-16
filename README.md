@@ -105,7 +105,7 @@ traul sync telegram
 traul sync gmail
 traul sync linear
 traul sync whatsapp
-traul sync claude-code
+traul sync claudecode
 traul sync markdown
 
 # Search messages (hybrid vector+keyword by default, requires Ollama)

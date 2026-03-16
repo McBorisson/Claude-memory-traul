@@ -74,7 +74,7 @@ Start with the easiest source and add more later. Each source syncs independentl
 Reads session files from `~/.claude/projects/` — nothing to configure.
 
 ```sh
-traul sync claude-code
+traul sync claudecode
 ```
 
 ### Markdown files (minimal config)
